@@ -1,0 +1,99 @@
+{
+  "contract_id": "observer.read.v1",
+  "contract_revision": "V3-A4-2026-10-05",
+  "status": "CANDIDATE_SIMULATED_NOT_DEPLOYED",
+  "goal": "Read-only projection over current VCW session/effect/event/heartbeat authorities without inventing missing product truth.",
+  "verified_v3a3_source_binding": {
+    "gateway_mode": "V2",
+    "store_schema_version": 3,
+    "event_model": "event_id AUTOINCREMENT + event_type + created_at + session_id? + project_id? + source + authoritative + payload",
+    "session_states": ["AUTHORIZED","QUEUED","STARTING","RUNNING","STOPPING","RECONCILE","EXPIRED","FINISHED","FAILED","STOPPED"],
+    "effect_states": ["PREPARED","DISPATCHING","CONFIRMED_APPLIED","CONFIRMED_NOT_APPLIED","OUTCOME_UNKNOWN","RECONCILING","RECOVERY_BLOCKED"],
+    "production_bound_source_evidence": "Phase7 deployed file digests and effect-kernel provenance digests matched byte-for-byte in V3-A3; current task does not re-read host Production because VCW grant expired."
+  },
+  "authority_rules": [
+    "SESSION_IS_NOT_TASK",
+    "EFFECT_IS_NOT_TASK",
+    "EVENT_IS_NOT_TRUTH",
+    "EFFECT_EVENT_IS_HINT_ONLY",
+    "HEARTBEAT_STALE_IS_NOT_EXECUTION_FAILED",
+    "NO_SERVER_FOCUS_POINTER_EXISTS",
+    "MISSING_AUTHORITY_IS_UNKNOWN_OR_UNAVAILABLE",
+    "READ_PROJECTION_MUST_NOT_EXPOSE_COMMAND_CAPABILITY"
+  ],
+  "source_identity": {
+    "required_field": "source_instance_id",
+    "stable_event_identity": ["source_instance_id","event_id"],
+    "current_production_gap": "schema v3 has no persistent event-store/source lineage id",
+    "candidate_bootstrap": "persist exactly once during deployment/bootstrap; projection reads never create or rotate it",
+    "reason": "event_id alone is not globally stable across database replacement/rebuild"
+  },
+  "snapshot": {
+    "contract_version": "observer.snapshot.v1",
+    "fields": ["source_instance_id","snapshot_revision","observed_at","authoritative_focus_task_id=null","projects[]","sessions[]","heartbeats[]","effects[]","events[]","event_cursor","availability"],
+    "snapshot_revision_semantics": "hash of authoritative/raw source content, excluding observed_at and derived age/remaining values",
+    "ordering": "canonical deterministic ordering before hashing"
+  },
+  "session_projection": {
+    "identity": "session_id",
+    "fields": ["project_id?","state(raw)","state_class","created_at","started_at?","ended_at?","expires_at","last_model_activity?","last_execution_activity?","failure_reason?","queue_position?","session_age_seconds","execution_elapsed_seconds?","remaining_seconds"],
+    "elapsed_rule": "execution_elapsed_seconds uses started_at/ended_at; created_at age remains a separate field",
+    "unknown_state_rule": "preserve raw state and classify state_class=UNKNOWN"
+  },
+  "heartbeat_projection": {
+    "fields": ["component","status(raw)","observed_at","age_seconds","freshness","detail"],
+    "freshness_rule": "STALE only when age_seconds > 30, matching current Dashboard display semantics",
+    "non_rule": "does not emit FAILED/SUSPECTED_STUCK task truth"
+  },
+  "effect_projection": {
+    "identity": "effect_id",
+    "fields": ["task_id","project_id","state(raw)","state_known","generation","created_at","updated_at","receipt?(sanitized)","last_error_code?"],
+    "receipt_allowlist": ["disposition","verified","observed_at","evidence"],
+    "receipt_omissions": ["authorization_snapshot_ref","runner_generation_digest","request_fingerprint","gateway_action_id","session_id","worker_ref","backend_port"],
+    "unknown_state_rule": "preserve raw state, state_known=false; do not coerce and do not fail the whole snapshot",
+    "required_backend_gap": "project/task scoped list_public_effects; current gateway_effect_get requires pre-known effect identity/access material and is not a browse surface"
+  },
+  "event_projection": {
+    "identity": ["source_instance_id","event_id"],
+    "cursor": "event_id within source_instance_id",
+    "raw_authority_flag_preserved": true,
+    "rule": "events may invalidate/refetch; they never overwrite session/effect canonical truth"
+  },
+  "availability": {
+    "tests_summary": "UNAVAILABLE_AGGREGATE",
+    "checkpoint": "UNAVAILABLE",
+    "artifact": "UNAVAILABLE",
+    "presentation": "UNKNOWN",
+    "logs": "SESSION_JOB_TAIL_ONLY"
+  },
+  "candidate_backend_surfaces": [
+    {"name":"observer_snapshot","params":["project_id?"],"effect":"READ_ONLY"},
+    {"name":"observer_project","params":["project_id"],"effect":"READ_ONLY"},
+    {"name":"observer_events","params":["project_id","after_id=0","limit=200"],"effect":"READ_ONLY"},
+    {"name":"observer_effects","params":["project_id","task_id?","limit=100"],"effect":"READ_ONLY"}
+  ],
+  "security": {
+    "transport": "NOT_IN_SCOPE_V3_A4",
+    "must_not_return": ["grant tokens","session handles","effect access tokens","authorization snapshot refs","worker_ref","backend_port","nonce hashes","grant hashes","raw credential material"],
+    "project_scope": "all list/read operations must enforce exact project filter before returning rows",
+    "command_plane": "ABSENT"
+  },
+  "deployment_behavior": {
+    "this_task_production_mutation": false,
+    "candidate_only": true,
+    "future_bootstrap_write": "one-time source_instance_id metadata persistence",
+    "steady_state_reads": "must be mutation-free"
+  },
+  "verification": {
+    "sandbox_tests": "24/24 PASS",
+    "test_axes": ["session/task namespace separation","elapsed semantics","unknown session state preservation","heartbeat 30s boundary","stale != failed","event identity","event authority preservation","effect event != effect truth","OUTCOME_UNKNOWN","RECONCILING","future effect state preservation","no authoritative focus invention","missing authority remains unavailable/unknown","cross-project filtering","event cursor","stable revision ignoring time-derived fields","revision changes on truth change","source identity required","invalid event id rejection","receipt minimization","input order invariant"],
+    "evidence_tier": "SANDBOX_EXECUTION_AGAINST_PRODUCTION_BOUND_CONTRACT_EVIDENCE",
+    "not_yet_verified": ["exact SQLiteEffectLedger list query against current deployed ledger schema","one-time source_instance_id bootstrap migration on VCW store","grafted Gateway composition/build/regression","Production deployment"]
+  },
+  "next_gate": {
+    "v3_a4_status": "CANDIDATE_READY_FOR_GRAFT",
+    "requires_new_vcw_grant": true,
+    "graft_scope": ["exact deployed effect-ledger schema inspection","implement list_public_effects","implement/persist source_instance_id bootstrap","register read-only projection surfaces","run existing VCW + Phase7 regressions in isolated candidate workspace"],
+    "production_cutover_authorized": false
+  }
+}
