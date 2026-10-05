@@ -33,7 +33,6 @@ public struct ObserverPreviewShell: View {
             }
             .tabItem {
                 Label("Overview", systemImage: "scope")
-                    .labelStyle(.iconOnly)
             }
             .tag(ObserverRootTab.overview)
 
@@ -42,7 +41,6 @@ public struct ObserverPreviewShell: View {
             }
             .tabItem {
                 Label("Runs", systemImage: "list.bullet.rectangle")
-                    .labelStyle(.iconOnly)
             }
             .tag(ObserverRootTab.runs)
 
@@ -51,7 +49,6 @@ public struct ObserverPreviewShell: View {
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
-                    .labelStyle(.iconOnly)
             }
             .tag(ObserverRootTab.settings)
         }
