@@ -1,0 +1,31 @@
+PASS targets_exact 
+PASS main_bundle_id 
+PASS extension_bundle_id 
+PASS extension_embedded 
+PASS no_app_group_v1 
+PASS no_push_entitlement_v1 
+PASS live_activity_plist 
+PASS remote_live_activity_not_frequent 
+PASS widget_extension_point 
+PASS local_live_activity_widget 
+PASS workflow_macos26 
+PASS workflow_xcode26_5 
+PASS workflow_readonly_permissions 
+PASS checkout_current_major 
+PASS artifact_current_major 
+PASS device_signing_disabled 
+PASS generic_ios_device_build 
+PASS payload_ipa_packaging 
+PASS scenario_cli 
+PASS detail_initializer_shape 
+PASS scenario_count_18 ['runningActiveOnline', 'startingActiveOnline', 'verifyingActiveOnline', 'finalizingActiveOnline', 'completedVerifiedPresentationUnknown', 'completedPresentationConfirmed', 'failedOnline', 'aborted', 'resumable', 'waitingApproval', 'runningSlow', 'runningStale', 'runningSuspectedStuck', 'runningLastKnownOffline', 'runningReconnecting', 'authFailedCached', 'multipleActiveAggregate', 'noRunEmpty']
+PASS all_scenarios_captured 
+PASS core3_capture 
+PASS deterministic_status_bar 
+PASS dark_appearance 
+PASS signing_report_generated 
+PASS no_signing_secrets_in_workflow 
+PASS self_sign_nested_appex_rule 
+PASS no_network_runtime_in_sources 
+PASS read_only_harness 
+CHECKS=30 PASS=30 FAIL=0

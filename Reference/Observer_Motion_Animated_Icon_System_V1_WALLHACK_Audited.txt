@@ -1,0 +1,2140 @@
+OBSERVER MOTION & ANIMATED ICON SYSTEM V1
+WALLHACK-LIKE iOS OBSERVER MOTION SYSTEM
+SIMULATED SOURCE GRAFT + ^10 AUDIT DELIVERY
+Date: 2026-10-04
+Status: BOUNDED_CONVERGED within SIMULATED / STATIC / SANDBOX scope
+
+======================================================================
+0. READ THIS FIRST
+======================================================================
+
+This file is the V1 implementation handoff for the GPT Local Guard iOS Observer motion system.
+It is deliberately NOT a generic animation mood board. It defines what is allowed to move, why it moves, how it stops, what it means, how it degrades under accessibility/power constraints, and how the motion layer is prevented from becoming a second truth engine.
+
+The visual direction is:
+
+    Apple-native interaction shell
+    x WALLHACK-like information grammar
+    x Observer authoritative execution state
+    x quiet motion, meaningful motion, edge-attached signal
+
+The core aesthetic is NOT:
+- cyberpunk HUD
+- hacker terminal cosplay
+- neon gradients
+- particle backgrounds
+- card rain
+- every icon bouncing forever
+- animated decoration pretending to be system state
+
+The core aesthetic IS:
+- Neutral Grotesk / SF system typography
+- extreme scale gap (XXL -> M -> XS)
+- Edge Logic
+- Local Grid
+- Quiet Field + Dense Node
+- Archive / Metadata grammar
+- restrained Functional Signal
+- motion derived from real state/event changes
+- large areas that are intentionally still
+
+The most important invariant:
+
+    MOTION IS A PROJECTION OF TRUTH.
+    MOTION IS NEVER A SOURCE OF TRUTH.
+
+If the authoritative Observer state says OFFLINE while the last known execution state was RUNNING, motion may represent the connection transition to OFFLINE, but it may NOT mutate RUNNING into FAILED.
+If RuntimeHealth is STALE, the UI must not manufacture an artificial heartbeat to make the app feel alive.
+If PresentationStatus is UNKNOWN after engineering completion, the UI must not animate it as a warning or failure.
+
+======================================================================
+1. TASK / SCOPE
+======================================================================
+
+Goal:
+Create a source-level, SwiftUI-oriented motion and animated-icon system that fits the user's WALLHACK-like visual language and can later be grafted into the real Observer app.
+
+This delivery includes:
+- motion semantic model
+- motion tokens
+- authoritative trigger -> motion policy
+- SF Symbols mapping
+- WALLHACK-like status hero
+- event-driven edge signal
+- numeric metadata animation
+- verification sweep
+- optional iOS 27 Draw enhancement gate
+- Live Activity boundary
+- optional Rive brand-motion adapter
+- optional Lottie one-shot adapter
+- accessibility and power constraints
+- simulated Swift source tree
+- pure Swift executable contract tests
+- static Swift parser verification
+- ^10 multi-axis audit
+- real-integration instructions
+
+This delivery does NOT include:
+- writing into the real Observer Xcode project
+- adding packages to a real Package.swift / Xcode project
+- real iOS SDK type-check/build
+- iOS Simulator run
+- iPhone device run
+- real ActivityKit runtime run
+- real Rive/Lottie binary linking
+- memory / energy profiling on device
+- production deployment
+- VPS changes
+
+Authorization boundary:
+SIMULATED LOCAL ARTIFACT CREATION ONLY.
+No real app/VPS/repository mutation was authorized or performed.
+
+======================================================================
+2. SOURCE BASIS
+======================================================================
+
+2.1 User project truth
+The motion layer preserves the frozen Observer state model:
+
+ExecutionStatus:
+PENDING / STARTING / RUNNING / WAITING_APPROVAL / VERIFYING / FINALIZING /
+COMPLETED / FAILED / ABORTED / RESUMABLE / UNKNOWN
+
+RuntimeHealth:
+ACTIVE / SLOW / STALE / SUSPECTED_STUCK / UNKNOWN
+
+ConnectionState:
+CONNECTING / ONLINE / RECONNECTING / OFFLINE / SERVER_UNREACHABLE / AUTH_FAILED
+
+ArtifactStatus:
+NOT_STARTED / CREATING / CREATED / VERIFYING / VERIFIED / EXPORTED / FAILED
+
+PresentationStatus:
+UNKNOWN / CONFIRMED_PRESENTED
+
+Truth invariants carried into motion:
+- Offline != Run Failed
+- Stale != Failed
+- Suspected Stuck != Dead
+- Completed != Presentation Confirmed
+- COMPLETED + Artifact VERIFIED + Presentation UNKNOWN is a valid engineering-complete state
+- Presentation UNKNOWN is neutral uncertainty, not automatic warning
+- motion cannot infer completion
+- frontend cannot infer missing backend truth
+
+2.2 WALLHACK-like visual source
+Applied visual grammar from the user's Drive reference system:
+- ordinary high-quality grotesk typography
+- extreme scale gap
+- Edge Alignment over decorative centering
+- Local Grid
+- Quiet Field + Dense Node
+- meaningful metadata
+- Visible / Latent information hierarchy
+- Functional Signal must have a real function and host
+- avoid rounded SaaS card rain and cyber HUD
+- color is not the identity; Scale / Edge / Grid / Density are the identity
+- no fake codes, fake telemetry, decorative crosshairs, barcode noise, or meaningless technical garnish
+
+For Web/Digital, the most relevant archetypes are:
+- T4 QUIET FIELD + DENSE NODE
+- T6 ARCHIVE INDEX
+- T7 SPLIT SCALE
+
+2.3 Current platform/library evidence reviewed during design
+Apple platform findings:
+- Native SwiftUI / SF Symbols are the V1 baseline.
+- SF Symbols state effects and content transitions are appropriate for semantic icon transitions.
+- numericText is appropriate for changing numeric metadata.
+- Draw On / Draw Off is treated as an iOS 27 enhancement, NOT a V1 baseline dependency.
+- Reduce Motion and animated-image accessibility preferences must be respected.
+- Live Activity animation is system-managed and must not reuse arbitrary foreground looping animation logic.
+- Always-On / reduced-luminance surfaces must be treated as constrained-motion contexts.
+
+Third-party findings:
+- Rive is kept behind an optional BrandMotionAdapter seam and may never own execution truth.
+- RiveViewModel lifetime must be SwiftUI-stable; the simulated adapter uses @StateObject.
+- Lottie is allowed only as optional local one-shot brand motion, never as the execution-state engine.
+- Third-party animation assets are local-only in this V1 plan; no runtime remote animation fetching is required.
+- Pow is intentionally NOT part of the V1 dependency set because the native baseline is sufficient.
+
+======================================================================
+3. MOTION PHILOSOPHY
+======================================================================
+
+3.1 The stillness budget
+Approximately 90% of the interface should be still at any given moment.
+Stillness is not a missing feature. It is part of the WALLHACK-like hierarchy.
+
+3.2 Motion hierarchy
+Tier 0 - STILL
+Default state. Most UI does not move.
+
+Tier 1 - DATA MOTION
+Highest-value motion:
+- numericText
+- test count changes
+- stage numbers
+- elapsed time presentation where appropriate
+- real heartbeat event tick
+- event insertion
+
+Tier 2 - SYMBOL MOTION
+Triggered only by semantic state changes or direct interaction:
+- replace symbol
+- one-shot pulse
+- variable color
+- controlled rotate during real in-progress operations
+- iOS 27 Draw enhancement
+
+Tier 3 - STRUCTURAL MOTION
+Used sparingly:
+- verification sweep
+- archive insertion
+- native navigation continuity
+Never use structural motion merely to make the page feel busy.
+
+Tier 4 - BRAND MOTION
+At most one or two hero assets in V1.
+Rive may be used here later, behind a replaceable adapter.
+
+3.3 Motion must answer a question
+Every animation must be able to answer:
+- What real event/state caused this?
+- What information does the motion communicate?
+- When does it stop?
+- What does the user see with Reduce Motion enabled?
+- What happens in Low Power Mode?
+- What happens when the scene is inactive?
+- What happens on Live Activity / Widget surfaces?
+
+If those questions cannot be answered, the motion is decorative and should be removed.
+
+======================================================================
+4. MOTION TOKENS V1
+======================================================================
+
+Token                     Duration          Use
+---------------------------------------------------------------------
+SIGNAL                     140 ms            heartbeat/edge tick
+MICRO                      180 ms            numeric/archive micro change
+STATE                      260 ms            state transition / symbol replace
+STRUCTURAL                 340 ms            verification sweep / larger change
+BRAND                      420 ms            one-shot hero brand transition
+INDEFINITE CYCLE           1800 ms           only real ongoing work, foreground
+MAX DISCRETE               500 ms            hard upper guard for ordinary UI
+
+Rules:
+- no ordinary discrete UI transition should exceed MAX DISCRETE without explicit design review
+- indefinite animation must have a real in-progress owner state
+- indefinite animation must stop when the owner state ends
+- indefinite animation is suppressed on constrained surfaces
+- Low Power Mode suppresses unnecessary indefinite motion
+- Reduce Motion eliminates spatial/looping motion and preserves the information change with fade/static alternatives
+
+======================================================================
+5. STATUS -> ICON -> MOTION CONTRACT
+======================================================================
+
+5.1 ExecutionStatus
+
+PENDING
+Icon: clock
+Default motion: none
+Reason: waiting is a state, not an activity that should pretend to be working.
+
+STARTING
+Icon: play.circle
+Entry motion: one-shot pulse, STATE 260 ms
+Loop: no
+Reduce Motion: small fade
+
+RUNNING
+Icon: play.fill
+Entry motion: symbol replace, STATE 260 ms
+Continuous motion: none by default
+Heartbeat: real heartbeat events generate a separate EDGE SIGNAL TICK
+Critical rule: do not loop the RUNNING icon just to make the app look alive.
+
+WAITING_APPROVAL
+Icon: hand.raised.fill
+Entry motion: symbol replace, STATE 260 ms
+Loop: no
+Critical rule: WAITING_APPROVAL is not FAILED and must not use failure motion.
+Observer v1 remains read-only.
+
+VERIFYING
+Icon: checkmark.shield
+V1 baseline: verificationSweep, STRUCTURAL 340 ms, one-shot on real transition
+Optional iOS 27 enhancement: drawOn27
+Loop: no
+Reduce Motion: fade/static state change
+Critical rule: iOS 27 Draw is enhancement-only, not a deployment requirement.
+
+FINALIZING
+Icon: arrow.clockwise
+Foreground normal: restrained indefinite rotate, 1800 ms cycle
+Low Power Mode: one-shot replace instead
+Scene inactive / Live Activity / Widget: no indefinite loop
+Owner condition: execution must actually be FINALIZING
+
+COMPLETED
+Icon: checkmark.circle.fill
+Entry motion: symbol replace, STATE 260 ms
+Loop: no
+After entry: static
+Critical rule: Completed does not imply Presentation CONFIRMED_PRESENTED.
+
+FAILED
+Icon: xmark.octagon.fill
+Entry motion: one-shot pulse, STATE 260 ms
+Loop: no
+Do not add endless shake, red glow, or repeated haptics.
+
+ABORTED
+Icon: stop.circle.fill
+Entry motion: symbol replace
+Loop: no
+
+RESUMABLE
+Icon: arrow.clockwise.circle
+Entry motion: symbol replace
+Loop: no
+Observer v1 must not turn this into a retry button.
+
+UNKNOWN
+Icon: questionmark.circle
+Default motion: none
+Do not animate unknown state as an alert unless a separate authoritative error exists.
+
+5.2 RuntimeHealth
+
+ACTIVE
+Motion on transition to ACTIVE: small fade
+No perpetual pulse.
+
+SLOW
+Motion: one-shot restrained pulse
+Meaning: degraded freshness/performance, not failure.
+
+STALE
+Motion: NONE
+This is deliberate. The absence of fresh motion is semantically aligned with stale data.
+Do not generate fake heartbeat animation.
+
+SUSPECTED_STUCK
+Motion: one threshold-crossing edge signal tick
+No forever flashing.
+Text/icon remains the primary semantic carrier.
+
+UNKNOWN
+Motion: none
+
+5.3 ConnectionState
+
+CONNECTING
+Icon: antenna.radiowaves.left.and.right
+Foreground + normal power: restrained indefinite rotation if the selected symbol/rendering supports it
+Low Power: one-shot pulse/replace
+
+ONLINE
+Icon: wifi
+Motion: one-shot replace on restoration
+
+RECONNECTING
+Icon: arrow.clockwise
+Foreground + normal power: restrained indefinite rotation
+Low Power / inactive: static or one-shot fallback
+
+OFFLINE
+Icon: wifi.slash
+Motion: one-shot replace/fade
+Critical rule: preserve last-known execution state separately.
+
+SERVER_UNREACHABLE
+Icon: exclamationmark.triangle.fill
+Motion: one-shot pulse/fade only
+
+AUTH_FAILED
+Icon: lock.slash
+Motion: one-shot replace/fade only
+
+5.4 ArtifactStatus
+
+NOT_STARTED
+Motion: none
+
+CREATING
+Motion: one-shot replace at entry; progress motion only if backed by real data
+
+CREATED
+Motion: replace
+
+VERIFYING
+Motion: verification sweep or iOS 27 Draw enhancement
+
+VERIFIED
+Motion: replace into verified symbol
+
+EXPORTED
+Motion: replace/fade
+
+FAILED
+Motion: one-shot pulse
+
+5.5 PresentationStatus
+
+UNKNOWN
+Motion: NONE
+Tone: neutral
+Example copy:
+  FINAL REPLY PRESENTATION / UNKNOWN
+Do not render yellow/red by default.
+
+CONFIRMED_PRESENTED
+Motion: small replace/fade once
+
+======================================================================
+6. REAL-EVENT MOTION CONTRACT
+======================================================================
+
+HeartbeatReceived
+-> edgeSignalTick
+-> 140 ms
+-> event-driven only
+-> no autonomous timer pretending to be heartbeat
+
+NumericMetadataChanged / TestProgressChanged
+-> numericText
+-> 180 ms
+-> attach an explicit animation transaction; contentTransition alone is not relied on to animate async changes
+
+StageAdvanced
+-> symbol replace / state transition
+-> 260 ms
+
+EventInserted
+-> archiveInsert
+-> 180 ms
+-> preserve list position logic; do not yank scroll position while user is inspecting history
+
+RuntimeHealthChanged to STALE
+-> no motion
+
+RuntimeHealthChanged to SUSPECTED_STUCK
+-> single edge signal threshold event
+-> then static suspected-stuck state
+
+======================================================================
+7. WALLHACK-LIKE UI MOTION LANGUAGE
+======================================================================
+
+7.1 Edge Signal Rail
+A 1-2 px edge-attached line can brighten briefly on a real heartbeat/status event.
+It must be attached to an actual UI edge/local grid.
+It is NOT a neon border.
+It does not loop.
+It does not become the only way to read status.
+
+7.2 Verification Sweep
+A 1 px rule grows from the leading edge once when entering VERIFYING.
+It should feel like registration/inspection, not scanner-HUD cosplay.
+No repeated sweep unless a new real verification phase event occurs.
+
+7.3 Archive insertion
+Timeline/event rows may use a small opacity/position insertion transition.
+The event content and timestamp remain the primary signal.
+Do not animate every heartbeat as a separate card.
+
+7.4 XXL -> M -> XS motion hierarchy
+The huge status word is generally stable.
+Small metadata may change more often.
+This creates the intended visual behavior:
+
+    RUNNING
+
+    STAGE 04 / 07
+    BUILD / 00:18:42
+    LAST HEARTBEAT / 2s
+
+The interface feels alive because real metadata changes, not because the hero word bounces.
+
+7.5 Functional color
+The V1 code includes a project-specific signal accent placeholder.
+It is NOT claimed to be an official WALLHACK brand color.
+Semantic system status must remain icon + text + appropriate semantic color, never color-only.
+
+7.6 Prohibited motion motifs
+- infinite breathing glow everywhere
+- random pulse on cards
+- particle background
+- Matrix/code rain
+- global scanlines
+- neon border loops
+- RGB/gradient animation
+- spring/bounce on every symbol
+- endless shake on error
+- 3D tilt cards
+- magnetic buttons everywhere
+- repeated shimmer on static content
+- fake heartbeat timer
+- state changes inferred from animation completion
+- full-screen cyber HUD transitions
+
+======================================================================
+8. ACCESSIBILITY / POWER / VISIBILITY
+======================================================================
+
+Accessibility rules:
+- respect Reduce Motion
+- respect the system preference controlling animated images for third-party animated assets
+- icon + text is always the primary semantic channel
+- color is supplemental
+- motion is supplemental
+- transitions must not hide state labels from VoiceOver semantics
+
+Reduce Motion fallback:
+- loops -> none
+- spatial sweep -> small fade/static
+- symbol replace -> opacity/cross-fade style behavior
+- numeric change -> reduced movement / opacity where needed
+- third-party brand animation -> static/final frame
+
+Power/visibility:
+- inactive scene suppresses indefinite motion
+- Low Power Mode suppresses nonessential indefinite animation
+- reduced luminance / Always-On contexts are treated as constrained
+- no background timer exists solely to feed decoration
+
+Haptics V1:
+- no automatic haptic for background state changes in this simulated system
+- do not vibrate on every heartbeat/test/event
+- if later added, haptics must be user-initiated or attached to truly high-value foreground feedback and pass a separate UX/accessibility review
+
+======================================================================
+9. LIVE ACTIVITY / WIDGET BOUNDARY
+======================================================================
+
+Live Activity is NOT the same motion environment as the foreground app.
+
+Rules:
+- no Rive
+- no Lottie
+- no arbitrary indefinite foreground loops
+- rely on system-managed state transitions
+- use text/symbol change and numeric transitions only where appropriate
+- keep payload glanceable and privacy-safe
+- status/stage/progress/health/last update only
+- no logs, command arguments, secrets, full paths
+
+Widget rules:
+- treat the widget as a snapshot, not a high-frequency truth surface
+- default static
+- Last Run / Status / Stage / Health / Last Updated
+- no fake realtime animation
+
+======================================================================
+10. DEPENDENCY POLICY
+======================================================================
+
+REQUIRED BASELINE
+SwiftUI + SF Symbols + Foundation
+Third-party dependency count required for core motion: ZERO
+
+OPTIONAL: Rive
+Role: one brand-level Guard Core glyph / hero state machine only
+Allowed ownership: presentation only
+Forbidden ownership: execution truth, health truth, connection truth, completion truth
+Asset source: local bundle
+Networking: not required
+Lifecycle: stable SwiftUI-owned model lifetime
+Default integration status in V1: OPTIONAL / DISABLED UNTIL REAL XCODE SMOKE TEST
+
+OPTIONAL: Lottie
+Role: one-shot onboarding/connection-success/brand event if truly needed
+Playback: play once
+Asset source: local bundle
+Networking: not required
+Reduced motion / animated-image preference: static/final frame
+Default integration status in V1: OPTIONAL / DISABLED UNTIL REAL XCODE SMOKE TEST
+
+NOT INCLUDED: Pow
+Reason: native primitives cover the V1 contract and avoid an unnecessary dependency surface.
+
+======================================================================
+11. SOURCE GRAFT ARCHITECTURE
+======================================================================
+
+Simulated source tree:
+
+Sources/
+  ObserverMotionCore.swift
+  ObserverMotionSwiftUI.swift
+  ObserverLiveActivityMotion.swift
+  ObserverBrandMotionAdapter.swift
+  ObserverRiveAdapter.swift
+  ObserverLottieAdapter.swift
+Tests/
+  ObserverMotionCoreTests.swift
+
+audit_motion_v1.py
+
+Boundary model:
+
+Authoritative Observer state/events
+        |
+        v
+ObserverMotionCore
+  - pure semantic mapping
+  - no SwiftUI
+  - no Rive/Lottie
+  - no network
+  - no state mutation
+        |
+        +----> SwiftUI native renderer
+        |
+        +----> Live Activity constrained renderer
+        |
+        +----> optional BrandMotionAdapter
+                    |
+                    +---- Native fallback (canonical)
+                    +---- Rive optional
+                    +---- Lottie optional one-shot
+
+Why this boundary matters:
+- third-party animation cannot rewrite state semantics
+- motion policy can be unit-tested without an Apple UI runtime
+- dependencies can be removed without breaking truth mapping
+- iOS-version fallbacks are centralized
+- Live Activity does not inherit foreground animation mistakes
+
+======================================================================
+12. REAL PROJECT INTEGRATION ORDER
+======================================================================
+
+When the real Observer Xcode project becomes available, do NOT copy everything at once.
+Use this order:
+
+F1. Add ObserverMotionCore.swift only.
+- map real existing enums instead of duplicating if canonical models already exist
+- if enum names differ, add an adapter, do not create a second truth model
+
+F2. Run real iOS unit tests for policy invariants.
+- all authoritative states must map deterministically
+- loops must have owner states
+- offline/stale/presentation semantics must remain separated
+
+F3. Add ObserverMotionSwiftUI.swift components selectively.
+- integrate ObserverAnimatedSymbol
+- integrate ObserverNumericMetadata
+- integrate ObserverEdgeSignalRail
+- integrate ObserverVerificationSweep
+- integrate WallhackStatusHero only after matching actual Design Tokens
+
+F4. Bind to REAL event identity.
+The animation trigger token must come from authoritative event/state identity, for example:
+- event_id
+- epoch + seq
+- state version
+Never animate from a blind local repeating timer.
+
+F5. Add Live Activity adapter separately.
+Do not share arbitrary foreground animation code with ActivityKit.
+
+F6. Run accessibility tests.
+- Reduce Motion ON/OFF
+- Dynamic Type
+- VoiceOver
+- high contrast / different color appearance where relevant
+- animated image preference for optional third-party assets
+
+F7. Run power/visibility tests.
+- Low Power Mode
+- app background/foreground
+- reduced luminance / Always-On where applicable
+
+F8. Only after the native path passes, consider Rive.
+- one Guard Core hero asset maximum in V1
+- local asset only
+- Rive never owns Observer state
+
+F9. Lottie only if a concrete one-shot need remains.
+Do not add it merely because the library exists.
+
+F10. Device profiling before release.
+- CPU
+- GPU
+- memory
+- energy
+- dropped frames
+- repeated navigation / lifecycle cleanup
+
+======================================================================
+13. ACCEPTANCE TESTS FOR REAL INTEGRATION
+======================================================================
+
+A. Truth separation
+[ ] OFFLINE never mutates execution status to FAILED
+[ ] STALE never mutates execution status to FAILED
+[ ] SUSPECTED_STUCK remains its own health state
+[ ] COMPLETED does not imply Presentation CONFIRMED_PRESENTED
+[ ] Presentation UNKNOWN is neutral
+
+B. Loop ownership
+[ ] every indefinite animation has a real owner state
+[ ] loop stops when owner state ends
+[ ] loop stops/suppresses when scene becomes inactive
+[ ] loop is suppressed under Reduce Motion
+[ ] nonessential loop is suppressed under Low Power Mode
+
+C. Heartbeat integrity
+[ ] heartbeat animation fires only when a real heartbeat event/token changes
+[ ] there is no decorative heartbeat timer
+[ ] STALE produces no fake activity signal
+
+D. Version fallback
+[ ] iOS 26 path does not require Draw On/Off
+[ ] iOS 27 Draw enhancement is availability-gated
+[ ] fallback conveys the same semantic state
+
+E. Accessibility
+[ ] icon + text remain readable with all motion removed
+[ ] color is never the only status channel
+[ ] third-party animated assets respect animated-image preferences
+[ ] Reduce Motion produces a usable static/cross-fade result
+
+F. Live Activity / Widget
+[ ] no foreground indefinite loop is reused
+[ ] no Rive/Lottie dependency is required
+[ ] information remains correct with zero animation
+
+G. Third-party isolation
+[ ] removing Rive still leaves a fully functional app
+[ ] removing Lottie still leaves a fully functional app
+[ ] no remote animation asset is required
+[ ] Rive/Lottie cannot write Observer truth state
+
+H. WALLHACK visual regression
+[ ] no card rain
+[ ] no neon HUD
+[ ] one clear primary display
+[ ] metadata forms a real local grid
+[ ] quiet field remains intentionally quiet
+[ ] functional signals have a real semantic host
+[ ] no fake codes/telemetry added for style
+
+======================================================================
+14. SIMULATED VERIFICATION RESULT
+======================================================================
+
+Pure Swift Core compilation/test environment:
+- Swift compiler available in sandbox
+- Core compiled into a local executable
+- Core test result: CHECKS=237 / FAILURES=0 / PASS
+
+SwiftUI/adapters:
+- every .swift source file passed Swift frontend parsing in the sandbox
+- this proves syntax parsing only
+- it does NOT prove Apple SDK type checking, framework availability, symbol catalog availability, package linking, ActivityKit behavior, simulator behavior, or device behavior
+
+Test Mode:
+SIMULATED
+
+Verification Tier:
+SANDBOX_EXECUTION_CORE + STATIC_PARSE_SWIFTUI + SOURCE/DOC INSPECTION
+
+Independence Class:
+SINGLE_EXECUTOR_MULTIPASS
+
+No production runtime claim is made.
+
+======================================================================
+15. ^10 AUDIT HISTORY AND FINAL CLEAN STREAK
+======================================================================
+
+Important audit behavior:
+Several real findings were discovered during the audit. Each material finding was fixed in the simulated source and reset the ^10 clean streak rather than being counted as a clean pass.
+
+Material findings discovered and repaired before final convergence:
+
+F-01 iOS availability mismatch
+Finding:
+Draw On / Draw Off cannot be treated as the iOS 26 baseline.
+Repair:
+Draw is capability-gated as an iOS 27 enhancement. V1 baseline uses verificationSweep/replace/fade paths.
+
+F-02 Rive SwiftUI lifecycle risk
+Finding:
+A Rive model recreated as an ordinary value property can break lifecycle/state behavior under SwiftUI re-rendering.
+Repair:
+Simulated adapter owns RiveViewModel with @StateObject and keeps the runtime behind BrandMotionAdapter.
+
+F-03 Native symbol-effect target error
+Finding:
+A prior simulated brand glyph attempted symbol-style behavior on a non-symbol shape.
+Repair:
+Changed animated primitive to an SF Symbol image.
+
+F-04 Accessibility was only policy-level
+Finding:
+A renderer could still animate if passed a stale/wrong MotionCommand after accessibility preferences changed.
+Repair:
+Added renderer-level defense-in-depth checks for Reduce Motion / scene activity.
+
+F-05 contentTransition transaction gap
+Finding:
+Declaring a content transition is not enough to guarantee an async value change is actually animated.
+Repair:
+Numeric and replace renderers attach explicit, controlled animation transactions.
+
+F-06 protocol/provider revision drift during the task
+Finding:
+GP-001 / GP-003 / SC-001 / UPO Manifest provider revisions changed after the first audit pass.
+Repair:
+Formal baseline was re-read. Current semantic routing remained compatible, UPO remained R8, and the ^10 clean streak was reset to zero. The ten audit rounds below were rerun under the revalidated baseline.
+
+FINAL CLEAN STREAK UNDER REVALIDATED BASELINE:
+FORMAL LOAD BASELINE (revalidated after detected revision drift)
+- 00｜全局协议索引与加载入口 v1.6
+  Document ID: 1uBxfRVxw99Jkz-dlM6tkg9hgqguYsj3ZSkrnSzq8ang
+  Revision: ANLCKQnTgkVv-w_cLxNX_YtvQE5j5cWoB1l7ATILlEqcWJYeyZ7lD7i2ue6vyPeHlevsRMwOml9ZEVdg20mkQKgFkhG9dAnS6kYBLgf_noM
+- GP-001 v1.0
+  Revision: AHj4eMSsOwFV_S3WdhMKgrbxPmAvK3tAhA32bFV3lf7u-B1uglebcpRvR9pGmdYZ69TgOVFE_N5d8FuA6sn9CmE61QdGhi05KMpAUCHgx8M
+- GP-002 v1.3
+  Revision: ANLCKQkw9lJCFAO_iBQ18OOqybE-DT4VLle-6dZimFDtBm6VCy4Oa1aRfBNltWhUDioToCksiK6c-aj5tIGPZ3V7JPdQAphURZ4zTBsSusg
+- GP-003 v1.3
+  Revision: AHj4eMQMXkY60eCC9VYJmRnzg-ZCyk4oBOb34vxvDaAiSNQ6o2WFNmVlkgNh9LlM_qXgrpePJrqDdkvV2JJre7DCr23SL6gGxXQL0sbF3qo
+- SC-001 v1.2
+  Revision: AHj4eMT7trl_tqanb21RZZyAvpZ0eoaNs1GvGgnSGfBKwJihTLRPU8rDfak1yaWxk4PttA1x2Dwi7fD3vlpWTvlTib4IMCtp0VOyKjGFn7A
+- UPO-00 v1.6
+  Revision: ANLCKQmUFxHoosTFejagkk_WQkPlWugCvDJzVn1VRgQp9Ro6L3t_f2ZrudrKmNFlYCgnszDdhPOA2z9B3KXN3fHykRxnUOgZcFT-f6bsh_s
+- UPO Manifest v1.2
+  Revision: AHj4eMQx6itJCWAZUF79xE7XevS-Wle5SGwHVI6wpsUHUg_H7l9GLflL2VLTSu1FVjWDF_YdsTjOX6tPFbMGRO1h_CiQivJWFJH6p9dAXB8
+  Current Bundle: UPO-BUNDLE-20260916-R8 / CURRENT_COMPATIBLE_RELEASE
+- UPO-01 v1.4 Revision: ANLCKQlRy7Yd_GElimEMuRBtrIPlCrZ71CabXjcJsP0KAx2oS15ZabLQHgfGzQE6Qs3JLQLA30yDumjR0UAYvgyg0iN8JXjcEVuqhYrHjyc
+- UPO-02 v1.3 Revision: ANLCKQlqjRG24G6m8gVEo7_j1aA9zPLROI_Z9jQfbY87AzcYILq-q9x4CYNGNwN0kuxJmCuf0oQgYP49JXKZEzTyv_rn2AAgnmade6d4fSk
+- UPO-03 v1.4 Revision: ANLCKQmQHPqH3Pe4Ixc2ZNum8-qgSf7YKRrD8l8tuLGTXNmOe82ftKzefL4L4Sixa_o871er3xEL7viOtZ6lLhwY1xD8rTnC9BlEvmwVuh8
+- UPO-04 v1.2 Revision: ANLCKQnUpN5k5WBRWd2U3LnqYgXumlQJ8jQaGzS1fqalrGWErPz83ZfD8K0A4cuX6ZrZhQmPcHD1KRN7Y0imQLJXovwiDbseZ5Qgk0RWMpk
+- UPO-05 v1.3 Revision: ANLCKQk9BRizL78jCayMUlSp7QHY2N9Uwwkpy_0FYNG0JAA_02A70rn1vj6dbkHzOK_UByyosPDUMJFk3MwIXcnw5idgADg0nnVSJUrC8vA
+- UPO-10 v1.0 Revision: ANLCKQnwyYMhLH9rirpeLRu6yquC_5QjGuCzLm_3hYGS9nLAqrbcydoCikj3ILasHd1o9KtpBVVqDcPQbsaLyyXsvFb7TJjmS70CKanwgXA
+- UPO-06 v1.4 Revision: ANLCKQks-nv01_9KHSYvlT5JN2atQEyXfbJ3cl5a7i-lv7ekAnjh4NxCa5fbyLHYQdGSNTP1li8Uf6y_464SOHsdkoc17HRJ5dchBffTnxY
+Round 01 | STATE_TRUTH_AND_SEPARATION | PASS
+  Notes: Motion is projection-only, never a truth source.
+Round 02 | LOOP_AND_TERMINATION_DISCIPLINE | PASS
+  Notes: Continuous movement is limited to actual in-progress work and stopped by constraints.
+Round 03 | WALLHACK_VISUAL_GRAMMAR | PASS
+  Notes: Edge + scale gap + quiet field + dense node, not cyber HUD.
+Round 04 | ACCESSIBILITY_DEFENSE_IN_DEPTH | PASS
+  Notes: Color and motion are supplemental; text/icon semantics remain.
+Round 05 | IOS_AVAILABILITY_AND_FALLBACK | PASS
+  Notes: Draw is enhancement-only, never a baseline requirement.
+Round 06 | LIVE_ACTIVITY_WIDGET_BOUNDARY | PASS
+  Notes: Lock-screen surfaces use system-managed transitions only.
+Round 07 | DEPENDENCY_AND_DATA_EGRESS_ISOLATION | PASS
+  Notes: Native path stays fully functional with zero third-party animation dependencies.
+Round 08 | THIRD_PARTY_LIFECYCLE_AND_API_BOUNDARY | PASS
+  Notes: Third-party runtimes cannot own Observer execution truth.
+Round 09 | POWER_PERFORMANCE_AND_VISIBILITY | PASS
+  Notes: Motion budget follows visibility and power constraints.
+Round 10 | REGRESSION_OBSERVABILITY_AND_TESTABILITY | PASS
+  Notes: CHECKS=237 / FAILURES=0 / RESULT=PASS
+
+SC-001 required clean streak: 10
+SC-001 achieved clean streak: 10
+Result: PASS
+
+Open P0 within bounded simulated/static scope: 0
+Open P1 within bounded simulated/static scope: 0
+
+This does NOT mean no unknown unknowns exist.
+It means no unresolved critical/high findings remained within the inspected source, declared constraints, current evidence, simulated tests, and ten final non-isomorphic audit surfaces.
+
+======================================================================
+16. TEN FINAL AUDIT SURFACES
+======================================================================
+
+1. STATE_TRUTH_AND_SEPARATION
+Attacks:
+- can animation become a second state machine?
+- can OFFLINE imply FAILED?
+- can Presentation UNKNOWN inherit warning semantics?
+Result: PASS
+
+2. LOOP_AND_TERMINATION_DISCIPLINE
+Attacks:
+- orphan loops
+- decorative forever motion
+- loop survives owner state
+Result: PASS
+
+3. WALLHACK_VISUAL_GRAMMAR
+Attacks:
+- cyber HUD drift
+- card rain
+- meaningless signal decoration
+- motion dominating typography/information hierarchy
+Result: PASS
+
+4. ACCESSIBILITY_DEFENSE_IN_DEPTH
+Attacks:
+- Remove Motion at policy and renderer boundaries
+- motion/color as sole semantic channel
+- third-party animated asset preference
+Result: PASS
+
+5. IOS_AVAILABILITY_AND_FALLBACK
+Attacks:
+- iOS 27-only features accidentally required by V1 baseline
+- missing fallback
+Result: PASS
+
+6. LIVE_ACTIVITY_WIDGET_BOUNDARY
+Attacks:
+- foreground loop copied to lock screen
+- third-party runtime required on glance surfaces
+- animation used as realtime truth
+Result: PASS
+
+7. DEPENDENCY_AND_DATA_EGRESS_ISOLATION
+Attacks:
+- native path broken when third-party frameworks are absent
+- remote asset dependency
+- external runtime becomes hidden requirement
+Result: PASS
+
+8. THIRD_PARTY_LIFECYCLE_AND_API_BOUNDARY
+Attacks:
+- Rive object lifetime instability
+- Lottie/Rive writes semantic truth
+- animated assets continue against accessibility state
+Result: PASS
+
+9. POWER_PERFORMANCE_AND_VISIBILITY
+Attacks:
+- unnecessary inactive-scene loops
+- Low Power abuse
+- continuous timer decoration
+Result: PASS at policy/static scope
+Device energy profiling remains unknown.
+
+10. REGRESSION_OBSERVABILITY_AND_TESTABILITY
+Attacks:
+- semantic behavior cannot be unit tested
+- native/third-party replacement changes truth semantics
+- insufficient invariant coverage
+Result: PASS
+Evidence: 237 Core checks, 0 failures.
+
+======================================================================
+17. KNOWN LIMITS / REMAINING UNKNOWNS
+======================================================================
+
+The following are intentionally NOT claimed as verified:
+
+1. Real Observer repository integration
+The actual repo/worktree was not supplied to this sandbox task.
+There may be naming, model, module, dependency, or architecture conflicts not visible here.
+
+2. Apple SDK type-check
+Linux Swift syntax/core compilation is not Xcode iOS framework type-checking.
+
+3. Real SF Symbol catalog compatibility
+The simulated names are reasonable candidates but must be verified against the actual deployment target's symbol catalog during Xcode integration.
+
+4. Simulator/device behavior
+No real navigation, ActivityKit, WidgetKit, rendering, VoiceOver, Reduce Motion, low-power, or background lifecycle test ran on Apple runtime.
+
+5. Rive linkage/runtime
+The adapter is optional and parsed only when conditionally imported. It was not linked against the real Rive binary in this sandbox.
+
+6. Lottie linkage/runtime
+Same limitation as Rive.
+
+7. Performance / memory / energy
+No Instruments/device profiling exists yet.
+
+8. Deployment target
+The source is designed around a modern SwiftUI Observer and explicitly handles the discovered iOS 27 Draw enhancement boundary, but the real project's exact deployment target must be read from the actual Xcode project before integration.
+
+9. Brand asset design
+No final Rive .riv or Lottie animation asset was authored here. V1 defines the contract and adapter seam only.
+
+10. Production assurance
+No production deployment or production effect occurred.
+
+======================================================================
+18. FINAL GOVERNANCE / COMPLETION STATE
+======================================================================
+
+Formal Load State:
+COMPLETE for applicable current formal global protocols after revalidation.
+
+Formal Load Snapshot State:
+VALID / REBOUND TO CURRENT REVISIONS after mid-task revision drift was detected and re-read.
+
+Candidate Route State:
+NOT USED. UAAS Candidate was not required for this task.
+
+Project Organ Route State:
+CURRENT R8 loaded for simulated reuse/composition/assembly/verification roles.
+No UPO-07 real structure mutation route.
+No UPO-08 production runtime/effect route.
+
+Authorization State:
+SIMULATED LOCAL ARTIFACT ONLY.
+No real repository/VPS/Xcode project mutation authorization was inferred.
+
+Goal / Scope:
+Observer Motion & Animated Icon System V1, WALLHACK-like theme, simulated source graft, current design/static evidence boundary.
+
+Actual Action Result:
+- local simulated Swift source tree created
+- pure Swift policy compiled and executed
+- 237 checks PASS
+- Swift source syntax parse PASS
+- optional third-party adapters isolated
+- final ^10 audit rerun under revalidated protocol baseline and PASS 10/10
+- this TXT generated
+
+Verification Tier:
+SANDBOX_EXECUTION_CORE + STATIC_PARSE_SWIFTUI + SOURCE/DOC_INSPECTION
+
+Independence Class:
+SINGLE_EXECUTOR_MULTIPASS
+
+Open P0/P1:
+0 / 0 within the bounded simulated/static scope.
+
+Remaining Blocker for real integration:
+Access to the real Observer Xcode project plus Apple SDK build/simulator/device verification.
+
+Terminal State:
+BOUNDED_CONVERGED
+
+Meaning of BOUNDED_CONVERGED:
+No untreated P0/P1 was found within the current target, source tree, evidence, simulation, and inspected attack surfaces. It is NOT a claim of production validation, independent reproduction, or absence of unknown failure modes.
+
+======================================================================
+19. FULL SIMULATED SOURCE APPENDIX
+======================================================================
+
+The following code is the actual sandbox source used for this simulation.
+It is included here so another AI/developer can reproduce the exact V1 logic instead of inventing a new one.
+
+
+======================================================================
+FILE: Sources/ObserverMotionCore.swift
+======================================================================
+import Foundation
+
+public enum ExecutionStatus: String, CaseIterable, Sendable {
+    case pending = "PENDING"
+    case starting = "STARTING"
+    case running = "RUNNING"
+    case waitingApproval = "WAITING_APPROVAL"
+    case verifying = "VERIFYING"
+    case finalizing = "FINALIZING"
+    case completed = "COMPLETED"
+    case failed = "FAILED"
+    case aborted = "ABORTED"
+    case resumable = "RESUMABLE"
+    case unknown = "UNKNOWN"
+}
+
+public enum RuntimeHealth: String, CaseIterable, Sendable {
+    case active = "ACTIVE"
+    case slow = "SLOW"
+    case stale = "STALE"
+    case suspectedStuck = "SUSPECTED_STUCK"
+    case unknown = "UNKNOWN"
+}
+
+public enum ConnectionState: String, CaseIterable, Sendable {
+    case connecting = "CONNECTING"
+    case online = "ONLINE"
+    case reconnecting = "RECONNECTING"
+    case offline = "OFFLINE"
+    case serverUnreachable = "SERVER_UNREACHABLE"
+    case authFailed = "AUTH_FAILED"
+}
+
+public enum ArtifactStatus: String, CaseIterable, Sendable {
+    case notStarted = "NOT_STARTED"
+    case creating = "CREATING"
+    case created = "CREATED"
+    case verifying = "VERIFYING"
+    case verified = "VERIFIED"
+    case exported = "EXPORTED"
+    case failed = "FAILED"
+}
+
+public enum PresentationStatus: String, CaseIterable, Sendable {
+    case unknown = "UNKNOWN"
+    case confirmedPresented = "CONFIRMED_PRESENTED"
+}
+
+public enum ObserverSurface: String, Sendable {
+    case appForeground
+    case liveActivity
+    case widget
+}
+
+public enum MotionTrigger: Equatable, Sendable {
+    case initialRender
+    case executionChanged(from: ExecutionStatus, to: ExecutionStatus)
+    case connectionChanged(from: ConnectionState, to: ConnectionState)
+    case heartbeatReceived
+    case runtimeHealthChanged(from: RuntimeHealth, to: RuntimeHealth)
+    case stageAdvanced
+    case numericMetadataChanged
+    case testProgressChanged
+    case eventInserted
+    case artifactChanged(from: ArtifactStatus, to: ArtifactStatus)
+    case presentationChanged(from: PresentationStatus, to: PresentationStatus)
+}
+
+public enum MotionKind: String, Sendable {
+    case none
+    case fade
+    case replaceSymbol
+    case pulseOnce
+    case variableColor
+    case rotateIndefinite
+    case numericText
+    case edgeSignalTick
+    case verificationSweep
+    case archiveInsert
+    case drawOn27
+}
+
+public struct MotionCommand: Equatable, Sendable {
+    public var kind: MotionKind
+    public var durationMS: Int
+    public var loops: Bool
+    public var intensity: Double
+    public var reason: String
+
+    public init(kind: MotionKind, durationMS: Int, loops: Bool = false, intensity: Double = 1.0, reason: String) {
+        self.kind = kind
+        self.durationMS = durationMS
+        self.loops = loops
+        self.intensity = intensity
+        self.reason = reason
+    }
+
+    public static let none = MotionCommand(kind: .none, durationMS: 0, reason: "No semantic motion required")
+}
+
+public struct MotionEnvironment: Equatable, Sendable {
+    public var surface: ObserverSurface
+    public var reduceMotion: Bool
+    public var lowPowerMode: Bool
+    public var sceneActive: Bool
+    public var luminanceReduced: Bool
+    public var supportsDrawEffects27: Bool
+
+    public init(
+        surface: ObserverSurface = .appForeground,
+        reduceMotion: Bool = false,
+        lowPowerMode: Bool = false,
+        sceneActive: Bool = true,
+        luminanceReduced: Bool = false,
+        supportsDrawEffects27: Bool = false
+    ) {
+        self.surface = surface
+        self.reduceMotion = reduceMotion
+        self.lowPowerMode = lowPowerMode
+        self.sceneActive = sceneActive
+        self.luminanceReduced = luminanceReduced
+        self.supportsDrawEffects27 = supportsDrawEffects27
+    }
+}
+
+public enum ObserverMotionTokens {
+    public static let signalMS = 140
+    public static let microMS = 180
+    public static let stateMS = 260
+    public static let structuralMS = 340
+    public static let brandMS = 420
+    public static let indefiniteCycleMS = 1800
+    public static let maxDiscreteMS = 500
+}
+
+public enum ObserverStatusGlyph {
+    public static func execution(_ status: ExecutionStatus) -> String {
+        switch status {
+        case .pending: return "clock"
+        case .starting: return "play.circle"
+        case .running: return "play.fill"
+        case .waitingApproval: return "hand.raised.fill"
+        case .verifying: return "checkmark.shield"
+        case .finalizing: return "arrow.clockwise"
+        case .completed: return "checkmark.circle.fill"
+        case .failed: return "xmark.octagon.fill"
+        case .aborted: return "stop.circle.fill"
+        case .resumable: return "arrow.clockwise.circle"
+        case .unknown: return "questionmark.circle"
+        }
+    }
+
+    public static func connection(_ state: ConnectionState) -> String {
+        switch state {
+        case .connecting: return "antenna.radiowaves.left.and.right"
+        case .online: return "wifi"
+        case .reconnecting: return "arrow.clockwise"
+        case .offline: return "wifi.slash"
+        case .serverUnreachable: return "exclamationmark.triangle.fill"
+        case .authFailed: return "lock.slash"
+        }
+    }
+}
+
+public enum ObserverMotionPolicy {
+    /// Motion never creates truth. It only reflects already-authoritative state/event changes.
+    public static func resolve(trigger: MotionTrigger, env: MotionEnvironment) -> MotionCommand {
+        // Widget / Always-On / inactive surfaces: keep movement extremely conservative.
+        if env.luminanceReduced || !env.sceneActive {
+            return fallbackForConstrainedSurface(trigger)
+        }
+
+        // Reduce Motion: preserve information change but eliminate spatial/looping motion.
+        if env.reduceMotion {
+            return reducedMotion(trigger)
+        }
+
+        switch env.surface {
+        case .widget:
+            return widgetMotion(trigger)
+        case .liveActivity:
+            return liveActivityMotion(trigger)
+        case .appForeground:
+            return appMotion(trigger, env: env)
+        }
+    }
+
+    private static func appMotion(_ trigger: MotionTrigger, env: MotionEnvironment) -> MotionCommand {
+        switch trigger {
+        case .initialRender:
+            return .none
+
+        case .heartbeatReceived:
+            // Crucial WALLHACK rule: animate the *real heartbeat event*, never a fake autonomous heartbeat loop.
+            return MotionCommand(kind: .edgeSignalTick, durationMS: ObserverMotionTokens.signalMS, intensity: 0.65, reason: "Real heartbeat event")
+
+        case .numericMetadataChanged, .testProgressChanged:
+            return MotionCommand(kind: .numericText, durationMS: ObserverMotionTokens.microMS, intensity: 0.75, reason: "Meaningful metadata changed")
+
+        case .stageAdvanced:
+            return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.85, reason: "Stage boundary changed")
+
+        case .eventInserted:
+            return MotionCommand(kind: .archiveInsert, durationMS: ObserverMotionTokens.microMS, intensity: 0.65, reason: "New forensic event appended")
+
+        case .runtimeHealthChanged(_, let to):
+            switch to {
+            case .active:
+                return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.microMS, intensity: 0.5, reason: "Health returned active")
+            case .slow:
+                return MotionCommand(kind: .pulseOnce, durationMS: ObserverMotionTokens.stateMS, intensity: 0.55, reason: "Health degraded to slow")
+            case .stale:
+                // Absence of motion is semantically useful: stale means the stream stopped refreshing.
+                return .none
+            case .suspectedStuck:
+                return MotionCommand(kind: .edgeSignalTick, durationMS: ObserverMotionTokens.stateMS, intensity: 1.0, reason: "Threshold crossing: suspected stuck")
+            case .unknown:
+                return .none
+            }
+
+        case .executionChanged(_, let to):
+            switch to {
+            case .starting:
+                return MotionCommand(kind: .pulseOnce, durationMS: ObserverMotionTokens.stateMS, intensity: 0.65, reason: "Execution entered starting")
+            case .running:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.65, reason: "Execution entered running")
+            case .waitingApproval:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.75, reason: "Execution is waiting for approval")
+            case .verifying:
+                if env.supportsDrawEffects27 {
+                    return MotionCommand(kind: .drawOn27, durationMS: ObserverMotionTokens.structuralMS, intensity: 0.8, reason: "iOS 27 enhancement for verification")
+                }
+                return MotionCommand(kind: .verificationSweep, durationMS: ObserverMotionTokens.structuralMS, intensity: 0.7, reason: "Verification entered; iOS 26-compatible baseline")
+            case .finalizing:
+                if env.lowPowerMode {
+                    return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.6, reason: "Low Power Mode suppresses indefinite rotation")
+                }
+                return MotionCommand(kind: .rotateIndefinite, durationMS: ObserverMotionTokens.indefiniteCycleMS, loops: true, intensity: 0.45, reason: "Finalization active and foreground-visible")
+            case .completed:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.7, reason: "Execution completed")
+            case .failed:
+                return MotionCommand(kind: .pulseOnce, durationMS: ObserverMotionTokens.stateMS, intensity: 0.85, reason: "Execution failed")
+            case .aborted:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.65, reason: "Execution aborted")
+            case .resumable:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.65, reason: "Execution can resume")
+            case .pending, .unknown:
+                return .none
+            }
+
+        case .connectionChanged(_, let to):
+            switch to {
+            case .connecting, .reconnecting:
+                if env.lowPowerMode {
+                    return MotionCommand(kind: .pulseOnce, durationMS: ObserverMotionTokens.stateMS, intensity: 0.5, reason: "Connection activity; low-power fallback")
+                }
+                return MotionCommand(kind: .rotateIndefinite, durationMS: ObserverMotionTokens.indefiniteCycleMS, loops: true, intensity: 0.4, reason: "Connection work is actively in progress")
+            case .online:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.6, reason: "Connection restored")
+            case .offline, .serverUnreachable, .authFailed:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.7, reason: "Connection entered terminal/degraded state")
+            }
+
+        case .artifactChanged(_, let to):
+            switch to {
+            case .creating:
+                return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.microMS, intensity: 0.5, reason: "Artifact creation began; no fake progress")
+            case .verifying:
+                return MotionCommand(kind: .verificationSweep, durationMS: ObserverMotionTokens.structuralMS, intensity: 0.7, reason: "Artifact verification event")
+            case .verified, .exported:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.65, reason: "Artifact reached verified/exported state")
+            case .failed:
+                return MotionCommand(kind: .pulseOnce, durationMS: ObserverMotionTokens.stateMS, intensity: 0.8, reason: "Artifact failed")
+            case .notStarted, .created:
+                return .none
+            }
+
+        case .presentationChanged(_, let to):
+            // Presentation UNKNOWN is explicitly neutral and must not animate like a warning.
+            switch to {
+            case .unknown:
+                return .none
+            case .confirmedPresented:
+                return MotionCommand(kind: .replaceSymbol, durationMS: ObserverMotionTokens.stateMS, intensity: 0.55, reason: "Presentation confirmation observed")
+            }
+        }
+    }
+
+    private static func reducedMotion(_ trigger: MotionTrigger) -> MotionCommand {
+        switch trigger {
+        case .numericMetadataChanged, .testProgressChanged:
+            return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.signalMS, intensity: 0.35, reason: "Reduce Motion: preserve content update without spatial movement")
+        case .executionChanged, .connectionChanged, .runtimeHealthChanged, .artifactChanged, .presentationChanged, .stageAdvanced:
+            return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.microMS, intensity: 0.35, reason: "Reduce Motion: cross-fade semantic state change")
+        case .heartbeatReceived, .eventInserted, .initialRender:
+            return .none
+        }
+    }
+
+    private static func widgetMotion(_ trigger: MotionTrigger) -> MotionCommand {
+        switch trigger {
+        case .numericMetadataChanged, .testProgressChanged:
+            return MotionCommand(kind: .numericText, durationMS: ObserverMotionTokens.microMS, intensity: 0.45, reason: "Widget numeric update")
+        default:
+            return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.microMS, intensity: 0.3, reason: "Widget uses glanceable low-motion transition")
+        }
+    }
+
+    private static func liveActivityMotion(_ trigger: MotionTrigger) -> MotionCommand {
+        // This is a policy abstraction only. The real Live Activity renderer must use system-supported transitions;
+        // it must not assume app-level Animation modifiers or third-party animation runtimes are honored.
+        switch trigger {
+        case .numericMetadataChanged, .testProgressChanged:
+            return MotionCommand(kind: .numericText, durationMS: ObserverMotionTokens.microMS, intensity: 0.45, reason: "Live Activity numeric content transition")
+        default:
+            return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.microMS, intensity: 0.3, reason: "Live Activity system-managed content transition")
+        }
+    }
+
+    private static func fallbackForConstrainedSurface(_ trigger: MotionTrigger) -> MotionCommand {
+        switch trigger {
+        case .numericMetadataChanged, .testProgressChanged:
+            return MotionCommand(kind: .fade, durationMS: ObserverMotionTokens.signalMS, intensity: 0.25, reason: "Constrained surface: no continuous animation")
+        default:
+            return .none
+        }
+    }
+}
+
+public enum ObserverMotionInvariants {
+    /// Static policy checks used by tests and audit tools.
+    public static func violations(for command: MotionCommand, env: MotionEnvironment) -> [String] {
+        var out: [String] = []
+        if command.durationMS < 0 { out.append("NEGATIVE_DURATION") }
+        if !command.loops && command.durationMS > ObserverMotionTokens.maxDiscreteMS { out.append("DISCRETE_TOO_LONG") }
+        if env.reduceMotion && command.loops { out.append("LOOP_UNDER_REDUCE_MOTION") }
+        if (!env.sceneActive || env.luminanceReduced) && command.loops { out.append("LOOP_ON_CONSTRAINED_SURFACE") }
+        if env.surface != .appForeground && command.kind == .drawOn27 { out.append("DRAW27_OUTSIDE_APP") }
+        if command.kind == .drawOn27 && !env.supportsDrawEffects27 { out.append("DRAW27_WITHOUT_CAPABILITY") }
+        return out
+    }
+}
+
+
+======================================================================
+FILE: Sources/ObserverMotionSwiftUI.swift
+======================================================================
+#if canImport(SwiftUI)
+import SwiftUI
+
+@available(iOS 17.0, *)
+public enum ObserverWallhackTheme {
+    // Project-specific palette inspired by the user's WALLHACK-like grammar.
+    // These are Observer tokens, not claimed WALLHACK official colors.
+    public static let field0 = Color(red: 0.035, green: 0.038, blue: 0.042)
+    public static let field1 = Color(red: 0.075, green: 0.080, blue: 0.087)
+    public static let inkPrimary = Color(red: 0.94, green: 0.95, blue: 0.96)
+    public static let inkSecondary = Color(red: 0.57, green: 0.60, blue: 0.64)
+    public static let hairline = Color.white.opacity(0.16)
+    public static let signal = Color(red: 0.80, green: 0.93, blue: 0.18)
+
+    public static let edgePadding: CGFloat = 18
+    public static let denseNodeGap: CGFloat = 5
+    public static let moduleGap: CGFloat = 14
+
+    public static func motionAnimation(for command: MotionCommand) -> Animation? {
+        guard command.kind != .none, command.durationMS > 0 else { return nil }
+        let seconds = Double(command.durationMS) / 1000
+        return .timingCurve(0.22, 1.0, 0.36, 1.0, duration: seconds)
+    }
+}
+
+@available(iOS 17.0, *)
+public struct ObserverAnimatedSymbol: View {
+    public let systemName: String
+    public let command: MotionCommand
+    public let changeToken: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+
+    public init(systemName: String, command: MotionCommand, changeToken: Int) {
+        self.systemName = systemName
+        self.command = command
+        self.changeToken = changeToken
+    }
+
+    @ViewBuilder
+    public var body: some View {
+        let active = scenePhase == .active && !reduceMotion
+        switch command.kind {
+        case .pulseOnce:
+            if reduceMotion || scenePhase != .active {
+                Image(systemName: systemName)
+                    .symbolRenderingMode(.monochrome)
+            } else {
+                Image(systemName: systemName)
+                    .symbolRenderingMode(.monochrome)
+                    .symbolEffect(.pulse, value: changeToken)
+            }
+
+        case .rotateIndefinite:
+            Image(systemName: systemName)
+                .symbolRenderingMode(.monochrome)
+                .symbolEffect(.rotate, isActive: active)
+
+        case .variableColor:
+            Image(systemName: systemName)
+                .symbolRenderingMode(.hierarchical)
+                .symbolEffect(.variableColor.iterative, isActive: active)
+
+        case .replaceSymbol:
+            Image(systemName: systemName)
+                .symbolRenderingMode(.monochrome)
+                .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace.offUp))
+                .animation(reduceMotion ? nil : .timingCurve(0.22, 1, 0.36, 1, duration: 0.26), value: systemName)
+
+        case .drawOn27:
+            drawOn27(active: active)
+
+        default:
+            Image(systemName: systemName)
+                .symbolRenderingMode(.monochrome)
+        }
+    }
+
+    @ViewBuilder
+    private func drawOn27(active: Bool) -> some View {
+        if #available(iOS 27.0, *) {
+            Image(systemName: systemName)
+                .symbolRenderingMode(.monochrome)
+                .symbolEffect(.drawOn.wholeSymbol, isActive: active)
+        } else {
+            Image(systemName: systemName)
+                .symbolRenderingMode(.monochrome)
+                .contentTransition(.symbolEffect(.replace.offUp))
+        }
+    }
+}
+
+@available(iOS 17.0, *)
+public struct ObserverNumericMetadata: View {
+    public let label: String
+    public let value: Double
+    public let formattedValue: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    public init(label: String, value: Double, formattedValue: String) {
+        self.label = label
+        self.value = value
+        self.formattedValue = formattedValue
+    }
+
+    public var body: some View {
+        HStack(spacing: 8) {
+            Text(label.uppercased())
+                .foregroundStyle(ObserverWallhackTheme.inkSecondary)
+            Spacer(minLength: 12)
+            Text(formattedValue)
+                .foregroundStyle(ObserverWallhackTheme.inkPrimary)
+                .monospacedDigit()
+                .contentTransition(reduceMotion ? .opacity : .numericText(value: value))
+                .animation(reduceMotion ? nil : .timingCurve(0.22, 1, 0.36, 1, duration: 0.18), value: value)
+        }
+        .font(.system(.caption2, design: .monospaced).weight(.medium))
+        .textCase(.uppercase)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+@available(iOS 17.0, *)
+public struct ObserverEdgeSignalRail: View {
+    public let eventToken: Int
+    public let isCritical: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var lit = false
+
+    public init(eventToken: Int, isCritical: Bool = false) {
+        self.eventToken = eventToken
+        self.isCritical = isCritical
+    }
+
+    public var body: some View {
+        Rectangle()
+            .fill(isCritical ? Color.red : ObserverWallhackTheme.signal)
+            .frame(width: 2, height: 28)
+            .opacity(lit ? 1.0 : 0.34)
+            .onChange(of: eventToken) { _, _ in
+                guard !reduceMotion else { return }
+                lit = false
+                withAnimation(.easeOut(duration: 0.08)) { lit = true }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(140))
+                    withAnimation(.easeOut(duration: 0.18)) { lit = false }
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+@available(iOS 17.0, *)
+public struct ObserverVerificationSweep: View {
+    public let triggerToken: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expanded = false
+
+    public init(triggerToken: Int) {
+        self.triggerToken = triggerToken
+    }
+
+    public var body: some View {
+        Rectangle()
+            .fill(ObserverWallhackTheme.signal)
+            .frame(height: 1)
+            .scaleEffect(x: expanded ? 1 : 0.08, y: 1, anchor: .leading)
+            .opacity(expanded ? 0.9 : 0.35)
+            .onChange(of: triggerToken) { _, _ in
+                guard !reduceMotion else { return }
+                expanded = false
+                withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.34)) {
+                    expanded = true
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+@available(iOS 17.0, *)
+public struct WallhackStatusHero: View {
+    public let executionStatus: ExecutionStatus
+    public let runtimeHealth: RuntimeHealth
+    public let connectionState: ConnectionState
+    public let stageText: String
+    public let elapsedText: String
+    public let lastUpdateText: String
+    public let motionCommand: MotionCommand
+    public let motionToken: Int
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+
+    public init(
+        executionStatus: ExecutionStatus,
+        runtimeHealth: RuntimeHealth,
+        connectionState: ConnectionState,
+        stageText: String,
+        elapsedText: String,
+        lastUpdateText: String,
+        motionCommand: MotionCommand,
+        motionToken: Int
+    ) {
+        self.executionStatus = executionStatus
+        self.runtimeHealth = runtimeHealth
+        self.connectionState = connectionState
+        self.stageText = stageText
+        self.elapsedText = elapsedText
+        self.lastUpdateText = lastUpdateText
+        self.motionCommand = motionCommand
+        self.motionToken = motionToken
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: ObserverWallhackTheme.moduleGap) {
+            HStack(alignment: .top, spacing: 12) {
+                ObserverEdgeSignalRail(
+                    eventToken: motionToken,
+                    isCritical: executionStatus == .failed || connectionState == .authFailed
+                )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(executionStatus.rawValue)
+                        .font(.system(size: min(heroSize, 72), weight: .medium, design: .default))
+                        .tracking(-1.2)
+                        .foregroundStyle(ObserverWallhackTheme.inkPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                        .contentTransition(.opacity)
+
+                    HStack(spacing: 8) {
+                        ObserverAnimatedSymbol(
+                            systemName: ObserverStatusGlyph.execution(executionStatus),
+                            command: motionCommand,
+                            changeToken: motionToken
+                        )
+                        Text(runtimeHealth.rawValue)
+                        Text("/")
+                            .foregroundStyle(ObserverWallhackTheme.inkSecondary)
+                        Text(connectionState.rawValue)
+                    }
+                    .font(.system(.caption, design: .monospaced).weight(.medium))
+                    .foregroundStyle(ObserverWallhackTheme.inkSecondary)
+                }
+            }
+
+            Rectangle()
+                .fill(ObserverWallhackTheme.hairline)
+                .frame(height: 1)
+
+            VStack(spacing: ObserverWallhackTheme.denseNodeGap) {
+                metadataRow("STAGE", stageText)
+                metadataRow("ELAPSED", elapsedText)
+                metadataRow("UPDATED", lastUpdateText)
+            }
+        }
+        .padding(.horizontal, ObserverWallhackTheme.edgePadding)
+        .padding(.vertical, 16)
+        .background(ObserverWallhackTheme.field0)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func metadataRow(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .foregroundStyle(ObserverWallhackTheme.inkSecondary)
+            Spacer(minLength: 16)
+            Text(value)
+                .foregroundStyle(ObserverWallhackTheme.inkPrimary)
+                .monospacedDigit()
+        }
+        .font(.system(.caption2, design: .monospaced).weight(.medium))
+    }
+}
+#endif
+
+
+======================================================================
+FILE: Sources/ObserverLiveActivityMotion.swift
+======================================================================
+#if canImport(SwiftUI)
+import SwiftUI
+
+/// Live Activity policy deliberately avoids app-level indefinite animations and third-party runtimes.
+/// ActivityKit/WidgetKit own the final timing of content updates.
+@available(iOS 17.0, *)
+public struct ObserverLiveActivityStatusView: View {
+    public let status: ExecutionStatus
+    public let stageIndex: Int
+    public let stageTotal: Int
+    public let elapsedSeconds: Double
+
+    public init(status: ExecutionStatus, stageIndex: Int, stageTotal: Int, elapsedSeconds: Double) {
+        self.status = status
+        self.stageIndex = stageIndex
+        self.stageTotal = stageTotal
+        self.elapsedSeconds = elapsedSeconds
+    }
+
+    public var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: ObserverStatusGlyph.execution(status))
+                .contentTransition(.symbolEffect(.replace.offUp))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(status.rawValue)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+
+                Text("STAGE \(stageIndex)/\(stageTotal)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(formatElapsed(elapsedSeconds))
+                .font(.caption2.monospacedDigit())
+                .contentTransition(.numericText(value: elapsedSeconds))
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func formatElapsed(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds))
+        return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+#endif
+
+
+======================================================================
+FILE: Sources/ObserverBrandMotionAdapter.swift
+======================================================================
+#if canImport(SwiftUI)
+import SwiftUI
+
+public enum BrandMotionState: String, Sendable {
+    case idle
+    case running
+    case verifying
+    case stale
+    case suspectedStuck
+    case completed
+    case failed
+}
+
+/// Narrow seam: brand animation can be swapped without owning execution truth.
+public protocol ObserverBrandMotionProviding {
+    associatedtype Body: View
+    @ViewBuilder func makeView(state: BrandMotionState, reduceMotion: Bool) -> Body
+}
+
+/// Dependency-free V1 fallback. This is the canonical behavior if Rive/Lottie are absent.
+@available(iOS 17.0, *)
+public struct NativeGuardCoreGlyph: View {
+    public let state: BrandMotionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+
+    public init(state: BrandMotionState) {
+        self.state = state
+    }
+
+    public var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(ObserverWallhackTheme.hairline, lineWidth: 1)
+                .frame(width: 26, height: 26)
+
+            Image(systemName: "minus")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(signalColor)
+                .symbolEffect(.pulse, isActive: shouldPulse && !reduceMotion && scenePhase == .active)
+        }
+        .accessibilityLabel(Text("Guard core \(state.rawValue)"))
+    }
+
+    private var shouldPulse: Bool {
+        state == .running || state == .verifying
+    }
+
+    private var signalColor: Color {
+        switch state {
+        case .failed: return .red
+        case .suspectedStuck: return .orange
+        default: return ObserverWallhackTheme.signal
+        }
+    }
+}
+#endif
+
+
+======================================================================
+FILE: Sources/ObserverRiveAdapter.swift
+======================================================================
+#if canImport(SwiftUI)
+import SwiftUI
+
+#if canImport(RiveRuntime)
+import RiveRuntime
+
+/// Optional experimental adapter. Assets MUST be bundled; V1 forbids remote .riv fetching.
+/// Pin and verify the exact RiveRuntime version before enabling in the real Xcode project.
+@available(iOS 17.0, *)
+public struct RiveGuardCorePrototype: View {
+    @StateObject private var model: RiveViewModel
+    public let state: BrandMotionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityPlayAnimatedImages) private var playAnimatedImages
+    @Environment(\.scenePhase) private var scenePhase
+
+    public init(state: BrandMotionState) {
+        self.state = state
+        _model = StateObject(wrappedValue: RiveViewModel(
+            fileName: "observer_guard_core",
+            stateMachineName: "GuardCore",
+            autoPlay: true,
+            loadCdn: false
+        ))
+    }
+
+    public var body: some View {
+        model.view()
+            .onAppear { applyState() }
+            .onChange(of: state) { _, _ in applyState() }
+            .onChange(of: reduceMotion) { _, _ in applyState() }
+            .onChange(of: playAnimatedImages) { _, _ in applyState() }
+            .onChange(of: scenePhase) { _, _ in applyState() }
+    }
+
+    private func applyState() {
+        // Intentionally use a tiny adapter contract. Exact input names belong to the bundled .riv asset contract.
+        let motionEnabled = !reduceMotion && playAnimatedImages && scenePhase == .active
+        model.setInput("motion_enabled", value: motionEnabled)
+        model.setInput("is_running", value: state == .running)
+        model.setInput("is_verifying", value: state == .verifying)
+        model.setInput("is_stale", value: state == .stale)
+        model.setInput("is_stuck", value: state == .suspectedStuck)
+        model.setInput("is_complete", value: state == .completed)
+        model.setInput("is_failed", value: state == .failed)
+    }
+}
+#endif
+#endif
+
+
+======================================================================
+FILE: Sources/ObserverLottieAdapter.swift
+======================================================================
+#if canImport(SwiftUI)
+import SwiftUI
+
+#if canImport(Lottie)
+import Lottie
+
+/// Optional one-shot adapter. It is not allowed to own long-running execution status.
+/// Local bundled assets only. No URL loading in V1.
+@available(iOS 17.0, *)
+public struct ObserverLottieOneShot: View {
+    public let assetName: String
+    public let playToken: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityPlayAnimatedImages) private var playAnimatedImages
+    @Environment(\.scenePhase) private var scenePhase
+
+    public init(assetName: String, playToken: Int) {
+        self.assetName = assetName
+        self.playToken = playToken
+    }
+
+    public var body: some View {
+        LottieView(animation: .named(assetName))
+            .playbackMode(
+                (reduceMotion || !playAnimatedImages || scenePhase != .active)
+                    ? .paused(at: .progress(1))
+                    : .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+            )
+            .id(playToken)
+            .accessibilityHidden(true)
+    }
+}
+#endif
+#endif
+
+
+======================================================================
+FILE: Tests/ObserverMotionCoreTests.swift
+======================================================================
+import Foundation
+
+@main
+struct ObserverMotionCoreTests {
+    static var failures = 0
+    static var checks = 0
+
+    static func expect(_ condition: @autoclosure () -> Bool, _ message: String) {
+        checks += 1
+        if !condition() {
+            failures += 1
+            print("FAIL: \(message)")
+        }
+    }
+
+    static func main() {
+        let normal = MotionEnvironment(surface: .appForeground)
+        let rm = MotionEnvironment(surface: .appForeground, reduceMotion: true)
+        let lowPower = MotionEnvironment(surface: .appForeground, lowPowerMode: true)
+        let inactive = MotionEnvironment(surface: .appForeground, sceneActive: false)
+        let live = MotionEnvironment(surface: .liveActivity)
+        let widget = MotionEnvironment(surface: .widget)
+        let ios27 = MotionEnvironment(surface: .appForeground, supportsDrawEffects27: true)
+
+        let heartbeat = ObserverMotionPolicy.resolve(trigger: .heartbeatReceived, env: normal)
+        expect(heartbeat.kind == .edgeSignalTick, "Heartbeat should produce event-driven edge tick")
+        expect(heartbeat.loops == false, "Heartbeat must not create synthetic loop")
+
+        let stale = ObserverMotionPolicy.resolve(trigger: .runtimeHealthChanged(from: .active, to: .stale), env: normal)
+        expect(stale.kind == .none, "STALE should communicate absence of refresh, not fake motion")
+
+        let stuck = ObserverMotionPolicy.resolve(trigger: .runtimeHealthChanged(from: .stale, to: .suspectedStuck), env: normal)
+        expect(stuck.kind == .edgeSignalTick, "SUSPECTED_STUCK should get threshold-crossing signal")
+        expect(stuck.loops == false, "SUSPECTED_STUCK signal must not loop forever")
+
+        let finalizing = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .verifying, to: .finalizing), env: normal)
+        expect(finalizing.kind == .rotateIndefinite && finalizing.loops, "FINALIZING can loop only while actively working")
+
+        let finalizingLP = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .verifying, to: .finalizing), env: lowPower)
+        expect(finalizingLP.loops == false, "Low Power Mode should suppress indefinite rotation")
+
+        let verify26 = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .running, to: .verifying), env: normal)
+        expect(verify26.kind == .verificationSweep, "iOS 26 baseline must not require Draw")
+
+        let verify27 = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .running, to: .verifying), env: ios27)
+        expect(verify27.kind == .drawOn27, "iOS 27 may use Draw enhancement")
+
+        let complete = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .finalizing, to: .completed), env: normal)
+        expect(complete.kind == .replaceSymbol && !complete.loops, "COMPLETED should settle after one transition")
+
+        let presentationUnknown = ObserverMotionPolicy.resolve(trigger: .presentationChanged(from: .confirmedPresented, to: .unknown), env: normal)
+        expect(presentationUnknown.kind == .none, "Presentation UNKNOWN must stay neutral, not warning-animated")
+
+        let numeric = ObserverMotionPolicy.resolve(trigger: .numericMetadataChanged, env: normal)
+        expect(numeric.kind == .numericText, "Metadata numbers should use numeric transition")
+
+        let rmFinal = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .verifying, to: .finalizing), env: rm)
+        expect(rmFinal.kind == .fade && !rmFinal.loops, "Reduce Motion must convert state movement to fade")
+
+        let inactiveReconnect = ObserverMotionPolicy.resolve(trigger: .connectionChanged(from: .offline, to: .reconnecting), env: inactive)
+        expect(inactiveReconnect.loops == false, "Inactive scene must not keep visual loops")
+
+        let liveFinal = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .verifying, to: .finalizing), env: live)
+        expect(liveFinal.kind == .fade && !liveFinal.loops, "Live Activity must not reuse foreground loop policy")
+
+        let liveNumeric = ObserverMotionPolicy.resolve(trigger: .numericMetadataChanged, env: live)
+        expect(liveNumeric.kind == .numericText, "Live Activity may request numeric text transition")
+
+        let widgetFinal = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .verifying, to: .finalizing), env: widget)
+        expect(widgetFinal.loops == false, "Widget should stay low motion")
+
+        for env in [normal, rm, lowPower, inactive, live, widget, ios27] {
+            let triggers: [MotionTrigger] = [
+                .initialRender,
+                .heartbeatReceived,
+                .numericMetadataChanged,
+                .testProgressChanged,
+                .stageAdvanced,
+                .eventInserted,
+                .executionChanged(from: .running, to: .verifying),
+                .executionChanged(from: .verifying, to: .finalizing),
+                .executionChanged(from: .finalizing, to: .completed),
+                .connectionChanged(from: .offline, to: .reconnecting),
+                .runtimeHealthChanged(from: .active, to: .stale),
+                .artifactChanged(from: .creating, to: .verifying),
+                .presentationChanged(from: .unknown, to: .confirmedPresented)
+            ]
+            for trigger in triggers {
+                let command = ObserverMotionPolicy.resolve(trigger: trigger, env: env)
+                let violations = ObserverMotionInvariants.violations(for: command, env: env)
+                expect(violations.isEmpty, "Invariant violation \(violations) for \(trigger) in \(env)")
+            }
+        }
+
+
+        // Exhaustive loop-discipline matrix.
+        for to in ExecutionStatus.allCases {
+            let cmd = ObserverMotionPolicy.resolve(trigger: .executionChanged(from: .unknown, to: to), env: normal)
+            if cmd.loops {
+                expect(to == .finalizing, "Only FINALIZING may loop among execution states")
+            }
+        }
+        for to in ConnectionState.allCases {
+            let cmd = ObserverMotionPolicy.resolve(trigger: .connectionChanged(from: .offline, to: to), env: normal)
+            if cmd.loops {
+                expect(to == .connecting || to == .reconnecting, "Only active connection work may loop")
+            }
+        }
+
+        let exhaustiveTriggers: [MotionTrigger] = [
+            .initialRender, .heartbeatReceived, .numericMetadataChanged, .testProgressChanged,
+            .stageAdvanced, .eventInserted,
+            .executionChanged(from: .pending, to: .starting),
+            .executionChanged(from: .starting, to: .running),
+            .executionChanged(from: .running, to: .waitingApproval),
+            .executionChanged(from: .running, to: .verifying),
+            .executionChanged(from: .verifying, to: .finalizing),
+            .executionChanged(from: .finalizing, to: .completed),
+            .executionChanged(from: .running, to: .failed),
+            .executionChanged(from: .running, to: .aborted),
+            .executionChanged(from: .failed, to: .resumable),
+            .connectionChanged(from: .offline, to: .connecting),
+            .connectionChanged(from: .connecting, to: .online),
+            .connectionChanged(from: .online, to: .reconnecting),
+            .connectionChanged(from: .reconnecting, to: .offline),
+            .connectionChanged(from: .online, to: .serverUnreachable),
+            .connectionChanged(from: .online, to: .authFailed),
+            .runtimeHealthChanged(from: .active, to: .slow),
+            .runtimeHealthChanged(from: .slow, to: .stale),
+            .runtimeHealthChanged(from: .stale, to: .suspectedStuck),
+            .artifactChanged(from: .notStarted, to: .creating),
+            .artifactChanged(from: .creating, to: .created),
+            .artifactChanged(from: .created, to: .verifying),
+            .artifactChanged(from: .verifying, to: .verified),
+            .artifactChanged(from: .verified, to: .exported),
+            .artifactChanged(from: .creating, to: .failed),
+            .presentationChanged(from: .unknown, to: .confirmedPresented)
+        ]
+        for trigger in exhaustiveTriggers {
+            expect(!ObserverMotionPolicy.resolve(trigger: trigger, env: rm).loops, "Reduce Motion must never loop")
+            expect(!ObserverMotionPolicy.resolve(trigger: trigger, env: live).loops, "Live Activity policy must never loop")
+            expect(!ObserverMotionPolicy.resolve(trigger: trigger, env: widget).loops, "Widget policy must never loop")
+            expect(!ObserverMotionPolicy.resolve(trigger: trigger, env: inactive).loops, "Inactive scene policy must never loop")
+        }
+
+        let allExec = ExecutionStatus.allCases.map(ObserverStatusGlyph.execution)
+        expect(allExec.count == ExecutionStatus.allCases.count, "Every execution status must map to a glyph")
+        let allConn = ConnectionState.allCases.map(ObserverStatusGlyph.connection)
+        expect(allConn.count == ConnectionState.allCases.count, "Every connection state must map to a glyph")
+
+        print("CHECKS=\(checks)")
+        print("FAILURES=\(failures)")
+        if failures > 0 { exit(1) }
+        print("RESULT=PASS")
+    }
+}
+
+
+======================================================================
+FILE: audit_motion_v1.py
+======================================================================
+from pathlib import Path
+import re, subprocess, json, sys
+root=Path('/mnt/data/observer_motion_v1_sim')
+src={p.name:p.read_text() for p in (root/'Sources').glob('*.swift')}
+alltxt='\n'.join(src.values())
+passes=[]
+
+def record(n,name,checks,notes=''):
+    bad=[c for c,ok in checks if not ok]
+    passes.append({'round':n,'name':name,'status':'PASS' if not bad else 'FAIL','failed':bad,'notes':notes})
+
+core=src['ObserverMotionCore.swift']
+swiftui=src['ObserverMotionSwiftUI.swift']
+live=src['ObserverLiveActivityMotion.swift']
+rive=src['ObserverRiveAdapter.swift']
+lottie=src['ObserverLottieAdapter.swift']
+brand=src['ObserverBrandMotionAdapter.swift']
+
+record(1,'STATE_TRUTH_AND_SEPARATION',[
+ ('execution/runtime/connection/artifact/presentation enums remain separate', all(x in core for x in ['enum ExecutionStatus','enum RuntimeHealth','enum ConnectionState','enum ArtifactStatus','enum PresentationStatus'])),
+ ('STALE maps to no synthetic motion', 'case .stale:' in core and 'return .none' in core.split('case .stale:',1)[1][:300]),
+ ('presentation UNKNOWN stays neutral', 'case .unknown:\n                return .none' in core),
+ ('motion does not mutate authoritative state', 'func resolve' in core and not re.search(r'\b(status|executionStatus|runtimeHealth|connectionState)\s*=', core[core.find('func resolve'):]))
+], 'Motion is projection-only, never a truth source.')
+
+record(2,'LOOP_AND_TERMINATION_DISCIPLINE',[
+ ('no repeatForever in V1 sources', 'repeatForever' not in alltxt),
+ ('no Timer-driven fake heartbeat', 'Timer.' not in alltxt),
+ ('heartbeat is event-driven', 'case .heartbeatReceived' in core and 'edgeSignalTick' in core),
+ ('low power suppresses key indefinite loops', 'Low Power Mode suppresses indefinite rotation' in core),
+ ('scene inactive path exists', '!env.sceneActive' in core)
+], 'Continuous movement is limited to actual in-progress work and stopped by constraints.')
+
+record(3,'WALLHACK_VISUAL_GRAMMAR',[
+ ('single edge signal primitive exists', 'ObserverEdgeSignalRail' in swiftui),
+ ('dense metadata uses monospaced small type', '.caption2' in swiftui and '.monospaced' in swiftui),
+ ('hero scale gap exists', 'heroSize' in swiftui and '56' in swiftui),
+ ('no SaaS card stack primitives', alltxt.count('RoundedRectangle(') <= 1),
+ ('no gradients/neon/shadows used as identity', all(k not in alltxt for k in ['LinearGradient','RadialGradient','AngularGradient','.shadow('])),
+ ('single project signal token', 'static let signal =' in swiftui)
+], 'Edge + scale gap + quiet field + dense node, not cyber HUD.')
+
+record(4,'ACCESSIBILITY_DEFENSE_IN_DEPTH',[
+ ('native renderer reads Reduce Motion', 'accessibilityReduceMotion' in swiftui),
+ ('numeric text falls back to opacity', 'reduceMotion ? .opacity : .numericText' in swiftui),
+ ('replace falls back to opacity', 'reduceMotion ? .opacity : .symbolEffect(.replace.offUp)' in swiftui),
+ ('Rive reads playAnimatedImages', 'accessibilityPlayAnimatedImages' in rive),
+ ('Lottie reads playAnimatedImages', 'accessibilityPlayAnimatedImages' in lottie),
+ ('text labels accompany status, not color-only', 'Text(executionStatus.rawValue)' in swiftui and 'Text(runtimeHealth.rawValue)' in swiftui)
+], 'Color and motion are supplemental; text/icon semantics remain.')
+
+record(5,'IOS_AVAILABILITY_AND_FALLBACK',[
+ ('Draw is gated to iOS 27', 'if #available(iOS 27.0, *)' in swiftui and '.drawOn' in swiftui),
+ ('iOS 26-compatible verification fallback exists', 'verificationSweep' in core and 'iOS 26-compatible baseline' in core),
+ ('V1 SwiftUI files declare iOS 17 floor for used content transition APIs', '@available(iOS 17.0, *)' in swiftui),
+ ('Draw capability modeled explicitly', 'supportsDrawEffects27' in core)
+], 'Draw is enhancement-only, never a baseline requirement.')
+
+record(6,'LIVE_ACTIVITY_WIDGET_BOUNDARY',[
+ ('Live Activity imports no Rive', 'RiveRuntime' not in live),
+ ('Live Activity imports no Lottie', 'Lottie' not in live),
+ ('Live Activity has no indefinite symbol effect', '.symbolEffect(.rotate' not in live and '.symbolEffect(.pulse' not in live),
+ ('Live Activity uses numericText', '.numericText' in live),
+ ('Live Activity has no custom withAnimation', 'withAnimation' not in live),
+ ('core live/widget policy never intentionally loops', 'private static func liveActivityMotion' in core and 'private static func widgetMotion' in core)
+], 'Lock-screen surfaces use system-managed transitions only.')
+
+record(7,'DEPENDENCY_AND_DATA_EGRESS_ISOLATION',[
+ ('core depends only on Foundation', core.startswith('import Foundation')),
+ ('Rive is canImport-guarded', '#if canImport(RiveRuntime)' in rive),
+ ('Lottie is canImport-guarded', '#if canImport(Lottie)' in lottie),
+ ('no remote URL loading in V1 sources', not re.search(r'https?://|URL\(', alltxt)),
+ ('Rive CDN loading disabled', 'loadCdn: false' in rive),
+ ('third-party adapters are optional surfaces', 'Optional experimental adapter' in rive and 'Optional one-shot adapter' in lottie)
+], 'Native path stays fully functional with zero third-party animation dependencies.')
+
+record(8,'THIRD_PARTY_LIFECYCLE_AND_API_BOUNDARY',[
+ ('Rive model retained as StateObject', '@StateObject private var model: RiveViewModel' in rive),
+ ('Rive state inputs are narrow and named', all(x in rive for x in ['motion_enabled','is_running','is_verifying','is_stale','is_stuck','is_complete','is_failed'])),
+ ('Rive auto-bind not used', 'enableAutoBind' not in rive),
+ ('Lottie is playOnce only', 'loopMode: .playOnce' in lottie),
+ ('Lottie remote async loader absent', 'loadedFrom(url:' not in lottie)
+], 'Third-party runtimes cannot own Observer execution truth.')
+
+record(9,'POWER_PERFORMANCE_AND_VISIBILITY',[
+ ('policy models Low Power Mode', 'lowPowerMode' in core),
+ ('policy models scene activity', 'sceneActive' in core),
+ ('policy models reduced luminance', 'luminanceReduced' in core),
+ ('brand loop stops when scene inactive', 'scenePhase == .active' in brand),
+ ('Rive motion_enabled follows scene/accessibility', 'scenePhase == .active' in rive and 'motion_enabled' in rive),
+ ('Lottie pauses outside active scene', 'scenePhase != .active' in lottie)
+], 'Motion budget follows visibility and power constraints.')
+
+# Execute regression for final round.
+proc=subprocess.run([str(root/'observer_motion_core_tests')],capture_output=True,text=True)
+parse_ok=True
+for p in (root/'Sources').glob('*.swift'):
+    q=subprocess.run(['swiftc','-frontend','-parse',str(p)],capture_output=True,text=True)
+    parse_ok &= q.returncode==0
+record(10,'REGRESSION_OBSERVABILITY_AND_TESTABILITY',[
+ ('pure Swift core executable tests pass', proc.returncode==0 and 'RESULT=PASS' in proc.stdout),
+ ('test count is at least 200', int(re.search(r'CHECKS=(\d+)',proc.stdout).group(1)) >= 200),
+ ('all Swift source files parse', parse_ok),
+ ('policy exposes invariant checker', 'ObserverMotionInvariants' in core),
+ ('motion commands carry reason/provenance string', 'var reason: String' in core)
+], proc.stdout.strip())
+
+print(json.dumps(passes,ensure_ascii=False,indent=2))
+if any(p['status']!='PASS' for p in passes):
+    sys.exit(1)
+
+
+END OF DOCUMENT

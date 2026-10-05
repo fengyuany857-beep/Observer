@@ -1,0 +1,26 @@
+OBSERVER SELF-SIGN HANDOFF V1
+
+CI OUTPUT EXPECTED
+- Observer-unsigned.ipa
+- Main bundle: com.fnauy.observer
+- Nested extension: com.fnauy.observer.widgets
+
+V1 deliberately does NOT request:
+- App Groups
+- Push Notifications
+- remote Live Activity updates
+
+V1 DOES contain:
+- main Observer app
+- WidgetKit extension
+- local Live Activity UI scaffold
+
+SELF-SIGN ACCEPTANCE
+1. Main app executable is signed.
+2. Every nested PlugIns/*.appex executable is signed.
+3. The provisioning profile authorizes every entitlement actually inserted by the signer.
+4. App launches on device.
+5. iOS discovers the Observer widget extension.
+6. A failed Widget/Live Activity check must not be reclassified as "app works" merely because the main app launches.
+
+DO NOT put certificates/private keys/profiles into this repository for this pipeline.

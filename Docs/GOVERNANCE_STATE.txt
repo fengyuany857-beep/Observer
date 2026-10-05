@@ -1,0 +1,26 @@
+Observer CI + Self-Sign Pipeline V1
+
+Scope
+- local/sandbox artifact creation only
+- no write to user GitHub repository
+- no Apple account action
+- no signing action
+- no deployment
+
+Formal load
+- 00 fresh-read: v1.6, Document ID 1uBxfRVxw99Jkz-dlM6tkg9hgqguYsj3ZSkrnSzq8ang
+- GP-001 fresh-read: v1.0, Document ID 1AVuY7D_-xZCtmm8J9mrji5Ah9QKH5doDj21f6hshelg
+- Project Organ triggered because this is engineering/build integration.
+- Current Manifest was revalidated after mid-task change and is v1.3.
+- Current Bundle Release resolved to UPO-BUNDLE-20261005-R9.
+- Current governing components read for this task include UPO-00 v1.7, UPO-01 v1.4, UPO-05 v1.3, UPO-06 v1.5, UPO-10 v1.0.
+- R9 separates durable normative-content identity from Google Docs provider revision tokens; provider token drift alone is not content drift.
+
+Assurance limitation
+- This task did not independently implement/recompute UPO_NORMATIVE_DOC_SHA256_V1 for every loaded component. Therefore this run does not claim an independent reproduction of the R9 durable identity attestation.
+- Because all project actions here are confined to a disposable local sandbox artifact, work may continue with this limitation recorded.
+- This package is not a production deployment, not a signed device artifact, and not evidence that the macOS/Xcode CI path has executed successfully.
+
+Authorization
+- Authorized: create/modify local sandbox files for the requested pipeline.
+- Not authorized/performed: GitHub repository write, workflow run, certificate/profile upload, signing, device installation, production changes.

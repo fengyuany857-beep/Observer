@@ -1,0 +1,1244 @@
+OBSERVER CORE 3 UI SKELETON V1
+WALLHACK-LIKE iOS OBSERVER
+Overview / Runs / Run Detail
+Motion Canonical Candidate Integration + ^5 Attack Audit
+Date: 2026-10-05
+Status: BOUNDED_CONVERGED within DESIGN / STATIC / SIMULATED scope
+
+======================================================================
+0. READ THIS FIRST
+======================================================================
+
+This file freezes a candidate interface skeleton for the three core Observer screens:
+
+1. Overview
+2. Runs
+3. Run Detail / Summary
+
+It combines:
+
+- the existing Observer product/state contract
+- the previously researched UI Pattern Matrix
+- the user's WALLHACK-like visual grammar
+- Observer Motion & Animated Icon System V1 as a MOTION CANONICAL CANDIDATE
+
+It is NOT a production UI implementation and does NOT promote the Motion Candidate or this UI Skeleton Candidate into formal Canonical state by itself.
+
+The intended visual formula is:
+
+    Apple-native interaction shell
+    x WALLHACK-like information grammar
+    x Dagster/Temporal execution hierarchy
+    x Pulse/Grafana log interaction principles
+    x Observer truth separation
+    x restrained event-driven motion
+
+The product must answer, quickly and truthfully:
+
+- What is GPT / Guard doing now?
+- Is it still working, slow, stale, stuck, disconnected, failed, or waiting?
+- Is the app connected to current truth?
+- Did engineering actually finish?
+- Was the artifact verified?
+- Was the final reply presentation actually confirmed?
+
+The most important invariant remains:
+
+    UI IS A PROJECTION OF TRUTH.
+    UI LAYOUT / COLOR / MOTION MUST NEVER BECOME A SECOND TRUTH ENGINE.
+
+======================================================================
+1. SOURCE BASIS
+======================================================================
+
+1.1 Observer truth model
+
+ExecutionStatus:
+PENDING / STARTING / RUNNING / WAITING_APPROVAL / VERIFYING / FINALIZING /
+COMPLETED / FAILED / ABORTED / RESUMABLE / UNKNOWN
+
+RuntimeHealth:
+ACTIVE / SLOW / STALE / SUSPECTED_STUCK / UNKNOWN
+
+ConnectionState:
+CONNECTING / ONLINE / RECONNECTING / OFFLINE / SERVER_UNREACHABLE / AUTH_FAILED
+
+ArtifactStatus:
+NOT_STARTED / CREATING / CREATED / VERIFYING / VERIFIED / EXPORTED / FAILED
+
+PresentationStatus:
+UNKNOWN / CONFIRMED_PRESENTED
+
+Truth invariants:
+- Offline != Run Failed
+- Stale != Failed
+- Suspected Stuck != Dead
+- Completed != Artifact Verified
+- Completed != Presentation Confirmed
+- COMPLETED + Artifact VERIFIED + Presentation UNKNOWN is valid engineering completion
+- Presentation UNKNOWN is neutral uncertainty, not automatic warning
+- historical run truth and current app connection truth must not be visually conflated
+- frontend may choose what to display, but may not invent backend state
+
+1.2 UI Pattern Matrix decisions already accepted for this stage
+
+Primary source roles:
+- Apple HIG / SwiftUI: native navigation, toolbar, TabView, accessibility, system interaction shell
+- GitHub Mobile / Primer: technical density, concise status labels, disciplined hierarchy
+- Dagster: Overview / Runs / execution monitoring organization
+- Temporal UI: Timeline / compact history / raw-event fallback
+- Pulse: native iOS log list/search/filter/detail behavior
+- Uptime Kuma: health, freshness, last-known-state, reconnect semantics
+- Grafana Explore logs: live-follow pauses when the user scrolls upward; never yank reading position
+
+Frozen IA direction:
+- Top-level tabs: Overview / Runs / Settings
+- Events is NOT a top-level tab
+- Overview and Runs remain separate
+- Run Detail opens Summary first
+- Timeline / Tests / Checkpoints & Artifacts / Logs / Raw Events are navigation destinations
+- no 6-7 item segmented-control explosion
+
+1.3 WALLHACK-like visual grammar
+
+Most relevant Web/Digital archetypes:
+- T4 QUIET FIELD + DENSE NODE
+- T6 ARCHIVE INDEX
+- T7 SPLIT SCALE
+
+Applied rules:
+- one absolute Display per page/state
+- XXL -> M -> XS scale gap
+- Edge Alignment over decorative centering
+- Local Grid
+- Quiet Field + concentrated Dense Node
+- meaningful metadata only
+- Visible / Latent information hierarchy
+- functional signal must have real state/event meaning
+- avoid rounded SaaS card rain
+- avoid cyber HUD / neon / fake telemetry
+- black/white/cool-gray hierarchy dominates; semantic status color remains functional
+
+1.4 Motion Candidate integration
+
+The Motion Candidate remains presentation-only and cannot mutate truth.
+Core motion carried into this skeleton:
+- status symbol replace on authoritative status transition
+- numericText for real numeric metadata changes
+- heartbeat edge tick only on real heartbeat event/token
+- one-shot verification sweep on transition into VERIFYING
+- archive insertion for real event/list insertion
+- no decorative heartbeat timer
+- no indefinite motion without a real owner state
+- Reduce Motion / Low Power / inactive-scene suppression
+- Live Activity and Widget remain constrained/static surfaces
+
+======================================================================
+2. NAVIGATION SKELETON
+======================================================================
+
+App root:
+
+TabView
+├─ Overview
+│  └─ Focused Run Detail
+├─ Runs
+│  └─ Run Detail
+│     ├─ Timeline
+│     ├─ Tests
+│     ├─ Checkpoints & Artifacts
+│     ├─ Logs
+│     └─ Raw Events
+└─ Settings
+
+Core three screens in this document:
+- Overview
+- Runs
+- Run Detail / Summary
+
+Observer v1 remains read-only.
+No Approve / Cancel / Retry / Restore / Delete / Deploy / Run Command / Push / Edit control is introduced by these screens.
+
+======================================================================
+3. GLOBAL PAGE GRAMMAR
+======================================================================
+
+3.1 Shell
+
+Use native NavigationStack + TabView + toolbar behavior.
+Do not recreate custom navigation chrome for visual branding.
+WALLHACK identity lives mainly in content hierarchy, edge logic, typography, metadata, spacing and restrained signal behavior.
+
+3.2 One Display rule
+
+Each root screen gets one major Display:
+- Overview: focused execution / aggregate run state
+- Runs: RUNS
+- Run Detail: execution status of that run
+
+No second XXL title competes with the Display.
+
+3.3 Status label abstraction
+
+Raw enum names are NOT automatically used as XXL display strings.
+A presentation label layer exists solely to prevent unreadable long tokens and localization breakage.
+It does not change semantic state.
+
+Recommended English visual labels:
+PENDING             -> PENDING
+STARTING            -> STARTING
+RUNNING             -> RUNNING
+WAITING_APPROVAL    -> WAITING
+VERIFYING           -> VERIFYING
+FINALIZING          -> FINALIZING
+COMPLETED           -> COMPLETED
+FAILED              -> FAILED
+ABORTED              -> ABORTED
+RESUMABLE           -> RESUMABLE
+UNKNOWN             -> UNKNOWN
+
+WAITING_APPROVAL secondary label:
+APPROVAL REQUIRED
+
+Localization rule:
+- accessible/localized copy may differ
+- raw authoritative enum can remain available as XS metadata/debug detail
+- layout must support Dynamic Type and a two-line fallback
+- never truncate the semantic state into an ambiguous fragment
+
+3.4 Structural visual units
+
+Preferred:
+- edge-attached rule
+- hairline divider
+- baseline-aligned metadata grid
+- native List row when interaction behavior benefits from List
+- quiet field with one dense information node
+
+Use large rounded cards only when there is a true iOS container interaction need.
+Do not use cards merely to separate every piece of information.
+
+3.5 Loading behavior
+
+No looping shimmer baseline.
+Loading uses:
+- static neutral geometry
+- stable placeholders
+- optional single opacity transition when data arrives
+
+======================================================================
+4. PAGE 01 / OVERVIEW
+======================================================================
+
+4.1 User question
+
+"现在到底在干嘛？连接还可信么？有没有卡？是不是真的完成？"
+
+Overview is the glanceable truth projection.
+It is NOT a miniature full dashboard.
+
+4.2 Focus Run Resolver
+
+Overview must not silently assume there is exactly one active run.
+
+Resolution order:
+1. If backend/project contract provides an authoritative focus_run_id, use it.
+2. Else, if exactly one nonterminal active run exists, use it as the presentation focus.
+3. Else, if zero active runs exist, show the most recent run as LAST RUN.
+4. Else, if multiple active runs exist and there is no authoritative focus, enter AGGREGATE MODE.
+
+AGGREGATE MODE:
+- Display: "N ACTIVE" or localized equivalent
+- show a compact active-run archive node
+- do not fabricate a single ExecutionStatus
+- do not attach one ambiguous heartbeat signal rail to multiple runs
+- tapping an active run opens its Run Detail
+
+This selection policy is presentation routing only. It does not modify execution truth.
+
+4.3 Normal focused-run skeleton
+
+┌──────────────────────────────────────┐
+│ OBSERVER                    ONLINE 2s│  XS / page identity + live connection
+│                                      │
+│ RUNNING                              │  XXL / only absolute Display
+│ ───────────────                      │  optional edge relation, not decorative
+│ active · stage 04/07                 │  M / support line
+│                                      │
+│ CURRENT OPERATION                    │  XS label
+│ BUILD / observer-ui                  │  M
+│                                      │
+│ RUN / 8F72                           │
+│ ELAPSED / 00:18:42                   │  Dense Metadata Node
+│ TESTS / 42 of 57                     │  numericText eligible
+│ HEARTBEAT / 2s                       │  real freshness only
+│                                      │
+│ HEALTH / ACTIVE                      │  concise truth rows
+│ PHASE / NORMAL                       │  hide NORMAL when low value
+│                                      │
+│ CHECKPOINT / CP-014                  │  if available
+│ LAST EVENT / test.suite.updated      │
+│                                      │
+│ View run detail                  ›   │  native NavigationLink
+└──────────────────────────────────────┘
+
+Bottom Tab Bar:
+Overview / Runs / Settings
+
+4.4 Connection incident behavior
+
+ONLINE:
+- stays in the compact metadata/page-identity layer
+- does not require a large banner
+
+CONNECTING / RECONNECTING / OFFLINE / SERVER_UNREACHABLE / AUTH_FAILED:
+- show ConnectionIncidentBar directly under page identity
+- bar is visually separate from ExecutionStatus hero
+- bar uses icon + explicit text + last observed timestamp where available
+- it may use semantic system color, but color is not the only carrier
+
+Example:
+
+CONNECTION OFFLINE
+Last live update 34s ago · showing cached run state
+
+Hero can still remain:
+
+RUNNING
+
+because "last known execution status = RUNNING" is not the same claim as "currently live and confirmed running".
+
+4.5 RuntimeHealth behavior
+
+RUNNING + ACTIVE:
+- normal hero
+- real heartbeat edge tick may fire on new heartbeat event
+
+RUNNING + SLOW:
+- keep RUNNING hero
+- Health row becomes SLOW
+- no failure treatment
+
+RUNNING + STALE:
+- keep RUNNING as last-known execution state
+- Health row becomes STALE
+- no fake heartbeat animation
+- show last heartbeat age prominently enough to explain stale state
+
+RUNNING + SUSPECTED_STUCK:
+- keep RUNNING hero
+- Health row becomes SUSPECTED STUCK
+- optional one threshold-crossing edge signal event
+- then static
+
+4.6 Completion Truth promotion
+
+When execution enters FINALIZING or a terminal completion state, the completion truth block moves directly under the hero instead of being buried in Run Detail.
+
+COMPLETED + Artifact VERIFIED + Presentation UNKNOWN:
+
+COMPLETED
+
+ENGINEERING   COMPLETE        ✓
+ARTIFACT      VERIFIED        ✓
+PRESENTATION  UNKNOWN
+
+Presentation UNKNOWN uses neutral styling.
+It must not be yellow/red by default.
+
+FAILED:
+
+FAILED
+
+EXECUTION     FAILED
+ARTIFACT      <authoritative artifact state>
+PRESENTATION  <authoritative presentation state>
+
+Do not infer artifact failure from execution failure unless backend says so.
+
+4.7 Overview empty state
+
+No run has ever existed:
+
+NO RUN
+
+Observer is connected / disconnected as a separate connection truth.
+Primary action remains passive/navigation-oriented, not a run command.
+
+4.8 Overview partial state
+
+If some data is missing:
+- render known authoritative fields
+- mark unavailable module with "UNAVAILABLE" / localized copy
+- do not collapse missing data into UNKNOWN if UNKNOWN is a real domain value with different meaning
+
+4.9 Overview motion binding
+
+ExecutionStatus changed:
+-> symbol replace / 260 ms candidate token
+-> hero word generally remains spatially stable
+
+HeartbeatReceived:
+-> edgeSignalTick / 140 ms
+-> only on real event identity change
+
+elapsed/tests/stage changed:
+-> numericText / micro token
+
+enter VERIFYING:
+-> one-shot verification sweep
+
+STALE:
+-> no fake motion
+
+======================================================================
+5. PAGE 02 / RUNS
+======================================================================
+
+5.1 User question
+
+"过去和现在有哪些执行？我要找哪一个？"
+
+Runs is an archive/index surface, not a second Overview.
+
+5.2 Skeleton
+
+┌──────────────────────────────────────┐
+│ RUNS                                 │  XXL Display
+│ archive / current + history          │  M
+│                                      │
+│ [connection incident, conditional]   │
+│                                      │
+│ Search runs...                       │  native .searchable
+│ Filter: ALL                      ▾   │  native Menu / toolbar control
+│                                      │
+│ CURRENT                              │  XS section label
+│ ──────────────────────────────────── │
+│ ● Project Alpha             RUNNING  │
+│   stage 04/07 · updated 2s           │
+│   health only shown if abnormal      │
+│                                      │
+│ HISTORY                              │
+│ ──────────────────────────────────── │
+│ Project Alpha              COMPLETED │
+│ 8F72 · 21:37 · 18m 42s               │
+│ ──────────────────────────────────── │
+│ Project Beta                  FAILED │
+│ 1A09 · 20:11 · 04m 18s               │
+│ ──────────────────────────────────── │
+└──────────────────────────────────────┘
+
+No rounded card per run.
+Rows belong to an archive grid/list.
+
+5.3 Filter model
+
+V1 recommended filters:
+- ALL
+- ACTIVE
+- ATTENTION
+
+ATTENTION can include authoritative states such as:
+- FAILED
+- AUTH_FAILED
+- SERVER_UNREACHABLE
+- SUSPECTED_STUCK
+- WAITING_APPROVAL
+
+ATTENTION is a presentation query over known states, not a new truth state.
+
+Do not add a row of decorative custom chips when a native Menu / Picker is sufficient.
+
+5.4 Row priority
+
+Primary line:
+- project_name
+- execution_status
+
+Secondary line:
+- stage when useful
+- updated_at / relative freshness
+
+Conditional tertiary information:
+- runtime_health only when abnormal
+- duration for history rows
+- run_id where identity/disambiguation matters
+
+Do not show every available field on every row.
+
+5.5 Active vs historical connection semantics
+
+Current app ConnectionState belongs to the live Observer connection, not to historical run truth.
+Therefore:
+- current connection incident appears once at page level
+- historical rows do not each pretend to have the current connection state
+
+5.6 Offline cached Runs behavior
+
+When offline:
+- keep cached list visible
+- show page-level notice: "OFFLINE · cached snapshot · last sync <time>"
+- preserve cached execution statuses as last-known states
+- do not convert all active rows to FAILED
+
+5.7 List motion / scroll stability
+
+New or updated run row:
+-> restrained archive insertion/update
+
+If user is actively reading/scrolled away from the live edge:
+- do not yank the scroll position
+- do not reorder visible rows aggressively under the finger
+- preserve a stable browsing snapshot or surface an unobtrusive update indicator until refresh/re-entry
+
+This follows the same interaction principle as log live-follow pause.
+
+5.8 Search
+
+Use native search behavior.
+Searchable fields may include:
+- project name
+- run id
+- known display labels/status terms
+
+Do not search raw logs from the Runs page.
+
+======================================================================
+6. PAGE 03 / RUN DETAIL / SUMMARY
+======================================================================
+
+6.1 User question
+
+"这一条执行到底发生了什么？现在/最终状态是什么？我去哪里看证据？"
+
+Run Detail starts at Summary.
+It is the authoritative drill-down hub.
+
+6.2 Skeleton
+
+┌──────────────────────────────────────┐
+│ ‹ Runs       PROJECT ALPHA           │  native back + inline identity
+│ [connection incident, conditional]   │
+│                                      │
+│ RUNNING                              │  XXL execution Display
+│ run / 8F72                           │  XS identity
+│                                      │
+│ CURRENT OPERATION                    │
+│ BUILD / observer-ui                  │
+│ stage 04 / 07                        │
+│                                      │
+│ HEALTH        ACTIVE                 │
+│ LIVE CONN.    ONLINE                 │  explicitly current app connection
+│ PHASE         NORMAL                 │  may hide NORMAL if low value
+│                                      │
+│ TESTS         42 / 57                │
+│ CHECKPOINT    CP-014                 │
+│ UPDATED       2s ago                 │
+│                                      │
+│ TIMELINE                         ›   │
+│ TESTS                            ›   │
+│ CHECKPOINTS & ARTIFACTS          ›   │
+│ LOGS                             ›   │
+│ RAW EVENTS                       ›   │
+│                                      │
+│ LAST EVENT                           │
+│ test.suite.updated · seq 1842        │
+└──────────────────────────────────────┘
+
+6.3 Why Summary is not segmented
+
+The destination set has different information depth and interaction behavior.
+A 5-7 way segmented control would:
+- compress labels
+- compete with the status hero
+- become difficult under Dynamic Type
+- flatten hierarchy
+- make every sub-surface look equally important
+
+Therefore use native navigation destinations.
+
+6.4 Truth Matrix
+
+ExecutionStatus:
+- hero only
+
+RuntimeHealth:
+- secondary truth row for active/nonterminal run
+- for terminal historical runs, label explicitly if presenting LAST KNOWN / FINAL observed health
+
+ConnectionState:
+- label as LIVE CONNECTION
+- it describes the app/server observation channel now
+- it must not be presented as historical run state
+
+ArtifactStatus:
+- completion evidence
+
+PresentationStatus:
+- completion evidence
+- UNKNOWN remains neutral
+
+6.5 Completion Evidence block
+
+For FINALIZING / COMPLETED / terminal review, show this high in Summary:
+
+COMPLETION EVIDENCE
+ENGINEERING    COMPLETE / FAILED / ABORTED / ...
+TESTS          <passed/failed/total>
+CHECKPOINT     <status + id>
+ARTIFACT       <artifact status>
+PRESENTATION   UNKNOWN / CONFIRMED PRESENTED
+LAST EVENT     <event identity/time>
+
+This block exists because the product's central question is not merely "what enum is the run?" but "is it really finished and supported by evidence?"
+
+6.6 Navigation destinations
+
+TIMELINE
+- semantic event history
+- heartbeats grouped, not one card each
+- preserve Raw Events separately
+
+TESTS
+- suite/case/result evidence
+- summary first, failures drill down
+
+CHECKPOINTS & ARTIFACTS
+- latest checkpoint
+- checkpoint history if available
+- artifact/bundle verification
+- metadata only in Observer v1
+
+LOGS
+- live follow at bottom
+- scrolling upward pauses live follow
+- Resume Live action returns to live edge
+- no forced scroll yank
+
+RAW EVENTS
+- forensic EventEnvelope view
+- epoch / seq / type / severity / stage / timestamp / correlation IDs
+- no beautification that destroys raw identity
+
+6.7 Failure state
+
+FAILED hero stays FAILED.
+Below it, show authoritative failure summary if available.
+No retry button in Observer v1.
+A RESUMABLE state can be displayed truthfully but remains non-actionable here.
+
+6.8 Historical terminal run
+
+Once a run is terminal:
+- stop active-run decorative/indefinite motion
+- completion evidence takes priority over runtime-health decoration
+- current connection remains a separate page-level observation fact
+
+======================================================================
+7. SHARED COMPONENT CONTRACTS
+======================================================================
+
+ObserverPageIdentity
+Purpose:
+- compact page/project identity
+- never competes with XXL Display
+
+ConnectionIncidentBar
+Inputs:
+- ConnectionState
+- last_seen / updated_at where available
+Rules:
+- shown for CONNECTING / RECONNECTING / OFFLINE / SERVER_UNREACHABLE / AUTH_FAILED
+- ONLINE remains compact
+- must never overwrite ExecutionStatus
+
+ObserverStatusHero
+Inputs:
+- authoritative ExecutionStatus OR aggregate-page mode
+- optional display label projection
+Rules:
+- one XXL Display only
+- icon + text semantics
+- raw enum remains available to accessibility/debug presentation if needed
+- status projection never changes domain truth
+
+CompletionTruthBlock / CompletionEvidenceBlock
+Inputs:
+- execution_status
+- tests
+- checkpoint
+- artifact/bundle status
+- presentation_status
+Rules:
+- promoted when finalization/terminal truth is important
+- Presentation UNKNOWN neutral
+
+DenseMetadataNode
+Inputs:
+- run_id
+- stage
+- elapsed
+- heartbeat freshness
+- tests
+- epoch/seq where useful
+Rules:
+- real fields only
+- no fake AA-000 style codes
+- concentrated node, not metadata scattered into every corner
+
+CurrentOperationBlock
+Inputs:
+- current_operation.kind
+- current_operation.name
+- started_at
+Rules:
+- omit when absent
+- do not manufacture operation text from stage name
+
+StageProgressRule
+Inputs:
+- stage.index / stage.total
+Rules:
+- thin structural progress relation
+- not a large circular progress widget
+
+RunArchiveRow
+Inputs:
+- run identity
+- project name
+- execution status
+- stage/updated
+- abnormal health conditional
+Rules:
+- no per-row card
+- no swipe command actions in Observer v1
+
+DestinationRow
+Inputs:
+- label
+- optional count/summary
+Rules:
+- native NavigationLink behavior
+- no segmented explosion
+
+CachedSnapshotNotice
+Purpose:
+- make offline/partial provenance explicit
+- show last sync time
+- never repaint cached execution state as a current live confirmation
+
+======================================================================
+8. DTO -> SCREEN MAPPING
+======================================================================
+
+RunStatus field                         Overview                  Runs Row                 Run Detail
+---------------------------------------------------------------------------------------------------------
+run_id                                  XS metadata               conditional identity     XS identity
+workspace_id                            hidden/diagnostic          hidden                    diagnostic only
+project_name                            page/focus identity        primary                   inline identity
+execution_status                        XXL hero                  primary status            XXL hero
+runtime_health                          health row                abnormal-only             truth row
+runtime_phase                           conditional XS/M          usually hidden             conditional truth row
+stage.id/name/index/total               M + progress              secondary                 current operation/stage
+current_operation.kind/name/started_at  current operation         not shown                 current operation
+eleapsed_ms                             numeric metadata          history duration          numeric metadata
+heartbeats.run/tool/relay               freshness                 updated-only/abnormal      freshness detail
+tests totals/completed/passed/failed    concise progress          usually hidden             summary + Tests link
+checkpoint latest_id/status             concise if useful         hidden                    summary + destination
+bundle/artifact status                  completion truth           optional terminal marker   completion evidence
+presentation_status                     completion truth           usually hidden             completion evidence
+last_event epoch/seq/type               last event                hidden                    last event / raw route
+updated_at                              freshness                 secondary                 footer/freshness
+
+Note: spelling of elapsed_ms follows the authoritative DTO; this document uses ELAPSED as a display label only.
+
+======================================================================
+9. SCREEN STATE MATRIX
+======================================================================
+
+OVERVIEW
+Loading:
+- static skeleton geometry
+- no shimmer loop
+Data:
+- normal focused/aggregate state
+Partial:
+- render known truth + explicit unavailable modules
+Empty:
+- NO RUN
+Offline:
+- cached state remains + ConnectionIncidentBar + last sync
+Error:
+- distinguish AUTH_FAILED / SERVER_UNREACHABLE / schema/data error where evidence exists
+
+RUNS
+Loading:
+- static row geometry
+Data:
+- Current + History
+Partial:
+- available cached/current rows + provenance notice
+Empty:
+- no runs
+Offline:
+- cached archive remains + page-level offline notice
+Error:
+- keep last known data when safe; error does not erase cached truth by default
+
+RUN DETAIL
+Loading:
+- static summary skeleton
+Data:
+- full Summary
+Partial:
+- preserve authoritative known fields and mark missing modules
+Offline:
+- historical/cached summary remains readable
+Error:
+- connection/schema/data errors are separate from run FAILED state
+
+======================================================================
+10. MOTION BINDINGS TO THE THREE PAGES
+======================================================================
+
+Overview:
+- hero symbol Replace on real ExecutionStatus transition
+- hero word generally spatially stable
+- numericText for elapsed/stage/tests
+- edgeSignalTick only on real heartbeat event identity
+- verificationSweep once on real enter VERIFYING
+- no motion for STALE itself
+
+Runs:
+- archiveInsert for real new run/event row insertion
+- status symbol Replace on row status change
+- numericText for changing stage/time/count where visible
+- no repeated row bounce
+- no forced reorder while the user is inspecting a scrolled list
+
+Run Detail:
+- hero symbol Replace
+- numericText for stage/tests/elapsed
+- verificationSweep on enter VERIFYING
+- edgeSignalTick may reflect that run's real heartbeat only when the detail is focused on that run
+- terminal historical state becomes still after one-shot transition
+
+Accessibility/power:
+- Reduce Motion suppresses spatial/looping behavior
+- Low Power suppresses nonessential indefinite motion
+- scene inactive suppresses indefinite motion
+- semantics remain correct with all animation removed
+
+======================================================================
+11. DYNAMIC TYPE / COMPACT WIDTH RULES
+======================================================================
+
+11.1 XXL Display is not allowed to break meaning
+
+For long display tokens:
+- use display-label projection
+- allow two-line fallback
+- keep semantic subtitle
+- reduce crop before reducing legibility
+- never shrink into tiny unreadable text merely to preserve one-line composition
+
+11.2 Dense Node
+
+When Dynamic Type grows:
+- expand vertically
+- keep one logical Local Grid
+- do not squeeze 4 columns into one line
+- metadata can become stacked key/value pairs
+
+11.3 Run rows
+
+At accessibility sizes:
+- project name and status remain primary
+- tertiary run id/duration/health may move to another line
+- do not truncate status meaning
+
+11.4 Destination rows
+
+Use native vertical growth.
+Do not force all destination labels into a single horizontal segmented control.
+
+======================================================================
+12. WALLHACK VISUAL REGRESSION GATES
+======================================================================
+
+PASS requires:
+- one clear primary Display per screen/state
+- T4 Quiet Field + Dense Node visible in Overview
+- T6 Archive Index visible in Runs
+- T7 Split Scale visible without destroying iOS readability
+- metadata is real and explainable
+- primary alignment is edge/local-grid driven
+- color is not the main style identity
+- signals have semantic hosts
+- removing microcopy still leaves a coherent layout
+
+FAIL patterns:
+- every section becomes a rounded card
+- hero + giant page title become two competing Displays
+- random yellow strips used only because WALLHACK sometimes used yellow
+- fake run codes / fake telemetry / decorative coordinates
+- crosshair/barcode/scanline inventory
+- neon glow status borders
+- giant circular dashboards
+- status meaning communicated only by color
+- page still looks like a web admin panel squeezed into iPhone
+
+======================================================================
+13. SWIFTUI IMPLEMENTATION MAPPING
+======================================================================
+
+Suggested view structure, not production code:
+
+ObserverRootView
+└─ TabView
+   ├─ OverviewNavigationStack
+   │  └─ ObserverOverviewView
+   │     ├─ ObserverPageIdentity
+   │     ├─ ConnectionIncidentBar?
+   │     ├─ FocusRunHero / ActiveRunsAggregate
+   │     ├─ CompletionTruthBlock?
+   │     ├─ CurrentOperationBlock?
+   │     ├─ DenseMetadataNode
+   │     ├─ HealthFreshnessBlock?
+   │     ├─ TestProgressRow?
+   │     ├─ LatestCheckpointRow?
+   │     └─ NavigationLink -> ObserverRunDetailView
+   │
+   ├─ RunsNavigationStack
+   │  └─ ObserverRunsView
+   │     ├─ WallhackPageDisplay("RUNS")
+   │     ├─ ConnectionIncidentBar?
+   │     ├─ .searchable
+   │     ├─ Filter Menu / Picker
+   │     ├─ CurrentRunsSection?
+   │     └─ RunArchiveList
+   │
+   └─ SettingsNavigationStack
+
+ObserverRunDetailView
+├─ ConnectionIncidentBar?
+├─ ObserverStatusHero
+├─ CompletionEvidenceBlock?
+├─ CurrentOperationBlock?
+├─ TruthMatrix
+├─ StageAndTestsSummary
+├─ DestinationList
+│  ├─ Timeline
+│  ├─ Tests
+│  ├─ CheckpointsAndArtifacts
+│  ├─ Logs
+│  └─ RawEvents
+├─ LastEventRow
+└─ UpdatedAtRow
+
+Important implementation boundary:
+- view code consumes canonical state/view-model projections
+- it does not implement state inference
+- presentation labels are pure display projections
+- focus-run resolver is presentation routing only and must be unit-testable
+
+======================================================================
+14. ATTACK AUDIT / MATERIAL FINDINGS AND REPAIRS
+======================================================================
+
+Audit mode:
+GP-002 formal audit requested by user.
+Target intensity used for design assurance: A2 / DEEP, read-only/static design scope.
+SC-001 parameter: required clean streak = 5.
+No active attack against production systems was authorized or performed.
+
+Material finding F-01 / OVERVIEW SINGLE-RUN ASSUMPTION
+Problem:
+Initial skeleton implicitly assumed exactly one active run.
+Risk:
+Multiple concurrent runs could cause the Overview hero to silently pick one and misrepresent system focus.
+Repair:
+Added Focus Run Resolver with authoritative focus first and explicit aggregate mode when multiple active runs exist without authoritative focus.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-02 / XXL STATUS OVERFLOW
+Problem:
+Raw enum WAITING_APPROVAL is unsuitable as an unconditional XXL token, especially compact width / Dynamic Type.
+Risk:
+Visual style could damage readability and accessibility.
+Repair:
+Added display-label projection WAITING + secondary semantic label APPROVAL REQUIRED, with two-line/localized fallback and raw enum retained as source truth.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-03 / COMPLETION PROOF TOO DEEP
+Problem:
+A design that shows only COMPLETED on Overview can still fail the user's central question: whether artifact verification and final reply presentation are actually known.
+Repair:
+Promoted Completion Truth directly beneath hero on Overview and Completion Evidence high in Run Detail Summary.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-04 / CONNECTION SALIENCE VS TRUTH CONFLATION
+Problem:
+Keeping OFFLINE as tiny XS metadata is too easy to miss; making OFFLINE replace RUNNING would be semantically false.
+Repair:
+Added page-level ConnectionIncidentBar that is salient but separate from ExecutionStatus. Cached run state and last sync/last seen remain explicit.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-05 / HISTORICAL CONNECTION AMBIGUITY
+Problem:
+Run Detail originally risked presenting current app/server ConnectionState as if it belonged to the historical run.
+Repair:
+Connection row is explicitly labeled LIVE CONNECTION. Terminal run truth and current observation-channel truth are separate.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-06 / RUNS ROW OVERLOAD
+Problem:
+Project + run id + status + health + stage + duration + update + checkpoint on every row collapses WALLHACK density rhythm into uniform clutter.
+Repair:
+Created primary/secondary/conditional row priority. Health only appears when abnormal; identity/duration are contextual.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-07 / LIVE LIST REORDER YANK
+Problem:
+Realtime updates that constantly reorder active runs can move rows under the user's finger and violate the stable archive-reading model.
+Repair:
+When the user is inspecting/scrolled, preserve stable browsing order or surface an update indicator; do not yank scroll position.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-08 / LOADING MOTION CONTRADICTION
+Problem:
+Default shimmer would violate the Motion Candidate's stillness budget and create meaningless perpetual animation.
+Repair:
+Static skeleton geometry + one-shot appearance only.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+Material finding F-09 / RUN DETAIL NAVIGATION FLATTENING
+Problem:
+A large segmented control for Summary/Timeline/Tests/Files/Logs/Events would compete with the hero and break under Dynamic Type.
+Repair:
+Summary root + navigation destinations. Raw Events remains forensic fallback.
+State:
+FIXED IN DESIGN CANDIDATE.
+
+======================================================================
+15. FINAL ^5 CLEAN-STREAK AUDIT
+======================================================================
+
+After all material repairs above, clean_streak was reset to 0.
+The following five NON-ISOMORPHIC audit passes were then run against the repaired baseline.
+
+PASS 1 / TRUTH MODEL & STATE COLLISION
+Attacked:
+- Offline vs Failed
+- Stale vs Failed
+- Suspected Stuck vs dead
+- Completed vs Verified vs Presented
+- current connection vs historical run truth
+- aggregate Overview vs fabricated single-run status
+Result:
+NO NEW P0/P1.
+clean_streak = 1/5
+
+PASS 2 / COMPACT WIDTH + DYNAMIC TYPE + LOCALIZATION
+Attacked:
+- long statuses
+- large text sizes
+- multi-line metadata
+- destination labels
+- status truncation
+- WALLHACK crop breaking recognition
+Result:
+NO NEW P0/P1.
+clean_streak = 2/5
+
+PASS 3 / WALLHACK GRAMMAR REGRESSION
+Attacked:
+- card rain
+- decorative signal color
+- fake technical metadata
+- competing Displays
+- dead whitespace
+- SaaS dashboard smell
+- cyber HUD drift
+Result:
+NO NEW P0/P1.
+clean_streak = 3/5
+
+PASS 4 / OFFLINE / PARTIAL / ERROR / REALTIME FAILURE PATHS
+Attacked:
+- offline cached provenance
+- auth failure
+- server unreachable
+- partial DTO availability
+- stale heartbeat
+- live list reorder
+- log/timeline reading stability
+Result:
+NO NEW P0/P1.
+clean_streak = 4/5
+
+PASS 5 / MOTION + ACCESSIBILITY + READ-ONLY AUTHORITY
+Attacked:
+- fake heartbeat motion
+- shimmer loops
+- Reduce Motion removal
+- Low Power/inactive behavior
+- action buttons leaking into Observer v1
+- motion becoming state inference
+- terminal state continuing to animate
+Result:
+NO NEW P0/P1.
+clean_streak = 5/5
+
+SC-001 threshold:
+PASS 5/5 on repaired baseline.
+
+Important:
+5/5 means the requested consecutive no-high-value-delta audit threshold passed.
+It does NOT mean perfect, production-tested, independently reproduced, or free of unknown unknowns.
+
+======================================================================
+16. STATIC STRUCTURAL LINT
+======================================================================
+
+A machine-readable design model was checked for structural invariants.
+
+Checks included:
+- exactly three top-level tabs: Overview / Runs / Settings
+- exactly three core design pages in this scope
+- Events not top-level
+- Timeline / Tests / Checkpoints & Artifacts / Logs / Raw Events preserved
+- Overview has separate connection and execution presentation
+- Overview has completion truth
+- Run Detail has completion evidence
+- Presentation UNKNOWN remains neutral
+- multiple-active-run ambiguity has an explicit guard
+- no command-plane destination/action in the three-page skeleton
+- loading/data/partial/offline/error states covered
+- empty state covered where applicable
+- no baseline shimmer requirement
+- motion hooks match the Motion Candidate categories
+- read-only boundary preserved
+
+Structural lint result:
+50 / 50 checks PASS
+0 failures
+
+This is a static design lint, not UI runtime verification.
+
+======================================================================
+17. VERIFICATION TIER / LIMITS
+======================================================================
+
+Actual work performed:
+- source read of Observer Motion & Animated Icon System V1 candidate
+- design composition against prior Pattern Matrix decisions
+- static page/state/component design
+- machine structural lint
+- GP-002 + SC-001 ^5 multi-axis attack audit
+
+Verification Tier:
+DESIGN_STATIC_INSPECTION + STRUCTURAL_LINT + MULTIPASS_ATTACK_AUDIT
+
+Independence Class:
+SINGLE_EXECUTOR_MULTIPASS
+
+Not performed:
+- Figma frame rendering
+- actual SwiftUI implementation
+- Xcode build/typecheck
+- iOS Simulator test
+- iPhone device visual test
+- Dynamic Type screenshot regression
+- VoiceOver runtime traversal
+- color-contrast measurement
+- real WebSocket/event binding
+- real list scroll stability test
+- performance / energy profiling
+
+Therefore this document is a strong construction candidate, not a production acceptance certificate.
+
+======================================================================
+18. GOVERNANCE / COMPLETION STATE
+======================================================================
+
+Formal Load State:
+COMPLETE for GP-001 / GP-002 / GP-003 / SC-001 at task start.
+
+Shortcut Route:
+SC-001 ^5 -> GP-002 Native Adapter.
+
+Candidate Route State:
+No UAAS Candidate route was needed for this bounded UI design task.
+
+Project Organ Route State:
+NOT REQUIRED for this design-only/static skeleton step; no real Assembly/Build action performed.
+
+Authorization State:
+READ-ONLY / LOCAL ARTIFACT CREATION ONLY.
+No real app repository, VPS, production service, deployment, or external state was modified.
+
+Goal / Scope:
+Freeze a candidate skeleton for Overview / Runs / Run Detail that integrates the Motion Candidate and prior UI Pattern Matrix while preserving Observer truth and WALLHACK-like visual grammar.
+
+Actual Action Result:
+Candidate interface skeleton created and statically audited.
+
+Open P0:
+0 within inspected design scope.
+
+Open P1:
+0 within inspected design scope.
+
+Remaining Unknowns / Blockers before implementation acceptance:
+- actual project source/view-model contracts
+- exact iOS deployment target
+- real compact-width rendering
+- Dynamic Type visual regression
+- VoiceOver runtime behavior
+- real dark/light/high-contrast appearance
+- actual status-copy localization
+- real list/live-event behavior
+- real device motion/performance
+
+Terminal State:
+BOUNDED_CONVERGED
+
+======================================================================
+19. NEXT BUILD STEP
+======================================================================
+
+Do NOT immediately build every screen.
+
+Recommended next step:
+Create LOW-FIDELITY visual frames for exactly these three states first:
+
+A. Overview / RUNNING + ACTIVE + ONLINE
+B. Overview / COMPLETED + ARTIFACT VERIFIED + PRESENTATION UNKNOWN
+C. Run Detail / RUNNING with destination list
+
+Then add:
+D. Runs / archive list
+E. Overview / OFFLINE while last-known RUNNING
+F. Overview / SUSPECTED_STUCK while ExecutionStatus remains RUNNING
+
+The purpose of the first visual pass is to validate:
+- XXL/M/XS scale gap
+- Quiet Field + Dense Node
+- one Display rule
+- compact-width readability
+- completion truth salience
+- offline truth separation
+- whether the interface still feels like iOS instead of a poster pasted into an app
+
+Only after those pass should the project enter the full Figma component/token pass or SwiftUI construction.
+
+END OF FILE

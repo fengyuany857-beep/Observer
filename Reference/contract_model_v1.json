@@ -1,0 +1,133 @@
+{
+  "contract_version": "1.0",
+  "top_tabs": [
+    "Overview",
+    "Runs",
+    "Settings"
+  ],
+  "core_pages": [
+    "Overview",
+    "Runs",
+    "RunDetail"
+  ],
+  "truth_dimensions": [
+    "ExecutionStatus",
+    "RuntimeHealth",
+    "ConnectionState",
+    "ArtifactStatus",
+    "PresentationStatus"
+  ],
+  "design_archetypes": [
+    "T4_QUIET_FIELD_DENSE_NODE",
+    "T6_ARCHIVE_INDEX",
+    "T7_SPLIT_SCALE"
+  ],
+  "components": [
+    "ObserverPageIdentity",
+    "ObserverStatusHero",
+    "ConnectionIncidentBar",
+    "CompletionTruthBlock",
+    "CompletionEvidenceBlock",
+    "DenseMetadataNode",
+    "CurrentOperationBlock",
+    "StageProgressRule",
+    "HealthFreshnessBlock",
+    "RunArchiveRow",
+    "DestinationRow",
+    "CachedSnapshotNotice",
+    "NewEventsGate",
+    "MotionNumericText",
+    "LocalElapsedClock",
+    "AccessibilityEventRouter"
+  ],
+  "root_destinations": [
+    "Overview",
+    "Runs",
+    "Settings"
+  ],
+  "detail_destinations": [
+    "Timeline",
+    "Tests",
+    "CheckpointsAndArtifacts",
+    "Logs",
+    "RawEvents"
+  ],
+  "screen_states": [
+    "LOADING",
+    "DATA",
+    "PARTIAL",
+    "EMPTY",
+    "OFFLINE_CACHED",
+    "ERROR"
+  ],
+  "preview_scenarios": [
+    "RUNNING_ACTIVE_ONLINE",
+    "STARTING_ACTIVE_ONLINE",
+    "VERIFYING_ACTIVE_ONLINE",
+    "FINALIZING_ACTIVE_ONLINE",
+    "COMPLETED_VERIFIED_PRESENTATION_UNKNOWN",
+    "COMPLETED_PRESENTATION_CONFIRMED",
+    "FAILED_ONLINE",
+    "ABORTED",
+    "RESUMABLE",
+    "WAITING_APPROVAL",
+    "RUNNING_SLOW",
+    "RUNNING_STALE",
+    "RUNNING_SUSPECTED_STUCK",
+    "RUNNING_LAST_KNOWN_OFFLINE",
+    "RUNNING_RECONNECTING",
+    "AUTH_FAILED_CACHED",
+    "MULTIPLE_ACTIVE_AGGREGATE",
+    "NO_RUN_EMPTY"
+  ],
+  "forbidden": [
+    "OFFLINE_EQUALS_FAILED",
+    "STALE_EQUALS_FAILED",
+    "SUSPECTED_STUCK_EQUALS_DEAD",
+    "COMPLETED_EQUALS_PRESENTED",
+    "COLOR_ONLY_STATUS",
+    "FAKE_METADATA",
+    "CARD_RAIN",
+    "CYBER_HUD",
+    "LOOPING_SHIMMER",
+    "COMMAND_PLANE_IN_V1",
+    "LEAF_VIEW_DIRECT_NETWORK",
+    "WIDGET_AS_REALTIME_AUTHORITY",
+    "LIVE_ACTIVITY_AS_EXECUTION_AUTHORITY",
+    "MAINACTOR_MILLION_LOG_FILTER"
+  ],
+  "large_data": {
+    "cursor_pagination": true,
+    "stable_identity": true,
+    "scroll_retention_adapter": true,
+    "new_events_gate": true,
+    "cancellable_background_log_search": true
+  },
+  "accessibility": {
+    "dynamic_type_reflow": true,
+    "reduce_motion": true,
+    "icon_text_status": true,
+    "announcement_router": true,
+    "heartbeat_silent": true,
+    "privacy_redaction": true
+  },
+  "surfaces": {
+    "widget_has_freshness": true,
+    "live_activity_stale": true,
+    "dedicated_compact_projections": true
+  },
+  "compatibility": {
+    "ios27_draw_baseline_required": false,
+    "scroll_api_adapter": true,
+    "observation_api_not_product_contract": true,
+    "websocket_transport_abstracted": true
+  },
+  "authorization": "READ_ONLY_SANDBOX_ARTIFACT_CREATION",
+  "project_organ_state": "PARTIAL_REVALIDATION_REQUIRED_UPO05_REVISION_DRIFT",
+  "presentation_guards": {
+    "resumable_not_auto_active": true,
+    "exported_not_equal_verified": true,
+    "terminal_elapsed_static": true,
+    "connection_incident_symbol_projected": true
+  }
+}

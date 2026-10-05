@@ -1,0 +1,84 @@
+OBSERVER PREVIEW ACCEPTANCE CHECKLIST V1
+Run this in real Xcode Canvas / Simulator before transport integration.
+
+GLOBAL FOR EVERY PREVIEW
+[ ] Execution / Runtime Health / Connection / Artifact / Presentation remain visually separate.
+[ ] No status is color-only.
+[ ] No fake metadata appears.
+[ ] No giant rounded-card dashboard emerges.
+[ ] Dynamic Type does not clip semantic text.
+[ ] Reduce Motion keeps all semantics understandable.
+[ ] VoiceOver order is logical and heartbeat/timer changes do not spam announcements.
+[ ] Light/Dark/Increase Contrast keep state distinctions legible.
+[ ] iPhone compact width remains readable without horizontal scrolling.
+
+01 RUNNING ACTIVE ONLINE
+[ ] RUNNING dominates once; ACTIVE remains secondary.
+[ ] Timer moves locally; page does not visibly relayout every second.
+
+02 STARTING ACTIVE ONLINE
+[ ] STARTING is neutral, not falsely successful.
+
+03 VERIFYING ACTIVE ONLINE
+[ ] VERIFYING does not imply VERIFIED.
+[ ] Artifact remains VERIFYING.
+
+04 FINALIZING ACTIVE ONLINE
+[ ] Finalizing truth block does not claim completion prematurely.
+
+05 COMPLETED + VERIFIED + PRESENTATION UNKNOWN
+[ ] Engineering complete = yes.
+[ ] Artifact verified = yes.
+[ ] Final reply presentation unknown remains neutral and explicit.
+
+06 COMPLETED + PRESENTATION CONFIRMED
+[ ] Presented is shown as additional evidence, not the definition of completion.
+
+07 FAILED ONLINE
+[ ] Failure belongs to run execution while connection remains online.
+
+08 ABORTED
+[ ] ABORTED is distinct from FAILED.
+
+09 RESUMABLE
+[ ] RESUMABLE does not look actively executing unless authoritative focus explicitly selects it.
+
+10 WAITING APPROVAL
+[ ] Hero reads WAITING with APPROVAL REQUIRED secondary line without overflow.
+
+11 RUNNING + SLOW
+[ ] RUNNING remains execution truth; SLOW is health warning only.
+
+12 RUNNING + STALE
+[ ] STALE uses no fake heartbeat animation.
+
+13 RUNNING + SUSPECTED STUCK
+[ ] Suspected stuck is a health escalation, not DEAD/FAILED.
+
+14 RUNNING LAST-KNOWN + OFFLINE
+[ ] Connection incident is prominent.
+[ ] Cached/last-sync provenance is explicit.
+[ ] Last-known RUNNING remains visible without being treated as live truth.
+
+15 RUNNING + RECONNECTING
+[ ] Last-sync age is derived, not fixed decorative metadata.
+
+16 AUTH FAILED + CACHED
+[ ] Authentication incident is distinct from execution status.
+[ ] Cached truth stays readable.
+
+17 MULTIPLE ACTIVE AGGREGATE
+[ ] Overview does not invent one RUNNING/VERIFYING hero.
+[ ] Aggregate clearly routes user toward Runs.
+
+18 NO RUN / EMPTY
+[ ] Empty state is calm, useful, and does not fabricate history.
+
+CORE 3 NAVIGATION
+[ ] Overview -> Run Detail works.
+[ ] Runs rows -> Run Detail works.
+[ ] Detail uses destination rows, not a segmented control wall.
+[ ] Timeline / Tests / Checkpoints & Artifacts / Logs / Raw Events are scaffold destinations only in this package.
+
+STOP GATE
+Do not connect real network transport until critical preview scenarios 01, 05, 10, 13, 14, 17 and accessibility-size variants are accepted in real Apple runtime.

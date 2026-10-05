@@ -1,0 +1,1434 @@
+OBSERVER DESIGN SYSTEM + SWIFTUI IMPLEMENTATION CONTRACT V1
+WALLHACK-LIKE iOS OBSERVER
+DESIGN SYSTEM / PRESENTATION CONTRACT / STATIC REFERENCE IMPLEMENTATION / ^5 AUDIT
+Date: 2026-10-05
+Status: CANDIDATE / LOCAL_AUDIT_BOUNDED_CONVERGED; FORMAL_TASK_PARTIAL due UPO-05/R8 revision drift
+
+======================================================================
+0. PURPOSE / AUTHORITY BOUNDARY
+======================================================================
+
+This package compresses the currently accepted Observer UI research into two coupled but separable artifacts:
+
+A. OBSERVER DESIGN SYSTEM V1
+   Defines visual hierarchy, layout grammar, semantic roles, component appearance and interaction behavior.
+
+B. SWIFTUI IMPLEMENTATION CONTRACT V1
+   Defines state ownership, presentation projections, component inputs, data/update boundaries, compatibility seams, accessibility, testing and implementation order.
+
+It is based on:
+- Observer truth model and frozen Core 3 skeleton
+- Observer Motion & Animated Icon System V1 candidate
+- WALLHACK-like Kernel / Typography & Layout source system
+- UI Pattern Matrix conclusions already accepted in this project
+- current Apple SwiftUI / ActivityKit / WidgetKit API evidence checked for this task
+
+This package is NOT:
+- a production Xcode project
+- a formal mutation of a project Canonical/Registry
+- proof of device runtime behavior
+- authorization to deploy or modify the real Observer app
+- permission to add third-party dependencies
+
+Hard invariant:
+
+    DESIGN IS A PROJECTION OF TRUTH.
+    SWIFTUI IS A PROJECTION OF PRESENTATION STATE.
+    PRESENTATION STATE IS NOT AN AUTHORITY FOR EXECUTION TRUTH.
+
+ExecutionStatus, RuntimeHealth, ConnectionState, ArtifactStatus and PresentationStatus remain separate dimensions.
+Offline != Failed.
+Stale != Failed.
+Suspected Stuck != Dead.
+Completed != Verified.
+Completed != Presented.
+
+======================================================================
+1. DESIGN SYSTEM V1 / IDENTITY
+======================================================================
+
+Visual formula:
+
+    Apple-native shell
+    x WALLHACK-like typography / information grammar
+    x Observer truth separation
+    x restrained event-driven motion
+
+The identity comes from:
+- extreme but usable scale gap
+- one dominant Display
+- Edge Logic
+- Local Grid
+- Quiet Field + Dense Node
+- Archive Index behavior
+- Split Scale
+- meaningful metadata
+- visible / latent information hierarchy
+- functional signal with a real semantic host
+
+The identity does NOT come from:
+- a fixed yellow accent
+- terminal fonts
+- black-green hacker UI
+- fake codes
+- scanlines
+- decorative crosshairs
+- neon borders
+- rounded SaaS card rain
+- giant circular dashboards
+
+Applicable WALLHACK-like archetypes:
+- T4 QUIET FIELD + DENSE NODE: Overview and special state surfaces
+- T6 ARCHIVE INDEX: Runs / Timeline / Logs / Raw Events
+- T7 SPLIT SCALE: Hero status + compact diagnostic layer
+
+One-screen rule:
+- one absolute Display only
+- M-level groups: 0-2 in the primary viewport
+- XS metadata is concentrated into 1-2 hosted nodes rather than scattered
+
+======================================================================
+2. FOUNDATION TOKENS
+======================================================================
+
+2.1 Spacing
+Base unit: 4 pt.
+
+space.1   4
+space.2   8
+space.3  12
+space.4  16
+space.5  20
+space.6  24
+space.8  32
+space.10 40
+space.14 56
+space.18 72
+
+Default compact-width page inset: 20 pt.
+Dense archive/list internal inset: 16 pt.
+Do not create arbitrary per-screen padding values unless a component contract explicitly requires it.
+
+2.2 Radius
+radius.none      0
+radius.micro     4
+radius.control   8
+radius.container 12
+radius.system    defer to native system container
+
+Rules:
+- status sections / metadata blocks do not automatically receive containers
+- large rounded cards are not the default separation mechanism
+- sheets, menus, search fields, system controls retain native platform geometry
+
+2.3 Rules / Dividers
+rule.pixel: one physical pixel when a truly hairline separator is required
+rule.standard: 1 pt
+signal.rail: 1-2 pt, edge-attached, event-driven, never a decorative border loop
+
+2.4 Typography roles
+Use system SF typography. No custom futuristic typeface is required for V1.
+
+DISPLAY
+- purpose: one primary status/page identity
+- target visual size: ~52-60 pt at standard content size, implemented with scalable metrics
+- weight: Semibold; Bold only when glyph recognition remains open and non-brick-like
+- case: short execution/status terms may use uppercase
+- lines: 1 preferred, 2 allowed
+- no minimumScaleFactor as the primary rescue mechanism
+
+TITLE
+- native title2/title3-like hierarchy
+- Medium/Semibold
+
+BODY
+- native body/callout
+- Regular/Medium
+
+META
+- caption/caption2-like
+- Regular/Medium
+- uppercase only for short keys
+- slight tracking allowed for keys, not for long prose
+- use monospacedDigit() for changing numbers; do not switch the whole UI to monospaced type
+
+LATENT
+- same semantic text styles at reduced contrast
+- never intentionally unreadable
+
+Dynamic Type:
+- typography must reflow before it shrinks
+- Dense Metadata changes from horizontal grid to vertical key/value groups
+- long status labels use display-label projections and two-line fallback
+
+2.5 Color roles
+No fixed WALLHACK brand color is required.
+
+content.primary        semantic primary text
+content.secondary      semantic secondary text
+content.tertiary       low-emphasis but readable metadata
+surface.base           native/system background
+surface.raised         only for real iOS container needs
+rule.neutral           low-contrast separator
+
+status.positive        successful/verified semantic role
+status.warning         degraded/waiting semantic role
+status.negative        failure semantic role
+status.neutral         unknown/non-error uncertainty
+status.connection      connection incident role
+signal.functional      optional accent attached to a real state/event host
+
+Rules:
+- every status remains icon + text; color is supplemental
+- PresentationStatus.UNKNOWN uses neutral styling by default
+- Offline does not recolor ExecutionStatus into failure
+- Increase Contrast must preserve semantic separation
+
+2.6 Materials / elevation
+Baseline: flat semantic surfaces and native system materials only where a system container actually exists.
+No custom glass layer is required for content cards.
+No shadow is required for status/metadata separation.
+
+======================================================================
+3. GLOBAL LAYOUT GRAMMAR
+======================================================================
+
+Root shell:
+TabView
+- Overview
+- Runs
+- Settings
+
+Each tab owns a NavigationStack.
+Events is not a root tab.
+
+Content layout:
+- page identity is compact and does not compete with Display
+- primary alignment follows leading edge / local grid
+- Quiet Field is intentional breathing room, not leftover blank space
+- Dense Node must have a structural host: page edge, hero termination, shared baseline, destination list boundary, or explicit section axis
+
+Responsive layout:
+- AnyLayout-style horizontal/vertical switching is preferred for Dynamic Type reflow
+- ViewThatFits-style progressive layout degradation is allowed for compact constraints
+- never preserve the poster composition by making text illegible
+
+======================================================================
+4. SEMANTIC PRESENTATION LAYERS
+======================================================================
+
+Raw domain state must not be passed casually into arbitrary leaf views.
+The UI consumes bounded presentation projections.
+
+Required projections:
+
+OverviewPresentation
+- pageIdentity
+- connectionIncident?
+- focusMode: focused(run) / aggregate(activeRuns) / lastRun(run) / empty
+- hero
+- completionTruth?
+- currentOperation?
+- metadataNode
+- healthFreshness?
+- tests?
+- checkpoint?
+
+RunRowPresentation
+- stableID
+- projectName
+- status
+- secondaryLine
+- abnormalHealth?
+- updatedAt
+- isCached
+
+RunDetailPresentation
+- runIdentity
+- liveConnectionIncident?
+- hero
+- completionEvidence?
+- currentOperation?
+- truthRows
+- stageSummary
+- testsSummary
+- destinations
+- lastEvent?
+- updatedAt
+- provenance
+
+WidgetProjection
+- runIdentity or privacy-safe alias
+- status
+- stage?
+- health?
+- freshness / lastUpdated
+- privacyRedaction state
+
+LiveActivityProjection
+- status
+- stage/progress
+- health
+- lastUpdated/freshness
+- stale state
+- privacy-safe project identity only if allowed
+
+The projection builder is pure presentation logic.
+It may select, format, aggregate, localize and hide fields.
+It may NOT infer a new execution truth.
+
+======================================================================
+5. STATUS PRESENTATION CONTRACT
+======================================================================
+
+ExecutionStatus display labels:
+PENDING           -> PENDING
+STARTING          -> STARTING
+RUNNING           -> RUNNING
+WAITING_APPROVAL  -> WAITING / secondary: APPROVAL REQUIRED
+VERIFYING         -> VERIFYING
+FINALIZING        -> FINALIZING
+COMPLETED         -> COMPLETED
+FAILED            -> FAILED
+ABORTED           -> ABORTED
+RESUMABLE         -> RESUMABLE
+UNKNOWN           -> UNKNOWN
+
+RuntimeHealth:
+ACTIVE / SLOW / STALE / SUSPECTED_STUCK / UNKNOWN
+never replaces execution status.
+
+Connection incidents:
+CONNECTING / RECONNECTING / OFFLINE / SERVER_UNREACHABLE / AUTH_FAILED
+render in ConnectionIncidentBar, separate from execution hero.
+ONLINE is compact and normally not promoted.
+
+Completion truth:
+execution completed
++ tests evidence
++ checkpoint evidence
++ artifact/bundle state
++ presentation state
+
+COMPLETED + artifact VERIFIED + presentation UNKNOWN is valid and must read as:
+- Engineering complete
+- Artifact verified
+- Final reply presentation unknown
+
+UNKNOWN presentation is neutral uncertainty.
+
+======================================================================
+6. COMPONENT SYSTEM
+======================================================================
+
+C01 ObserverPageIdentity
+Purpose: small page/project identity.
+Never competes with Display.
+
+C02 ObserverStatusHero
+Inputs: StatusPresentation only.
+Contains: semantic symbol + Display label + optional secondary semantic label.
+Must not read network/store directly.
+Must not infer state.
+
+C03 ConnectionIncidentBar
+Inputs: ConnectionIncidentPresentation including semantic symbol/title/detail projection.
+Shown for non-ONLINE incidents.
+Must preserve and label last-known execution state separately.
+
+C04 CompletionTruthBlock
+Overview variant.
+Promotes completion proof near the hero.
+
+C05 CompletionEvidenceBlock
+Run Detail variant.
+Shows tests/checkpoint/artifact/presentation evidence.
+
+C06 DenseMetadataNode
+Inputs: array of MetadataField with real semantic IDs.
+Maximum recommended visible fields in first viewport: 4-6.
+At accessibility sizes switches to vertical key/value layout.
+Every field must be explainable and real.
+
+C07 CurrentOperationBlock
+Uses explicit current_operation fields only.
+Never manufactures operation name from stage.
+
+C08 StageProgressRule
+Thin linear structural relation.
+No giant ring dashboard.
+
+C09 HealthFreshnessBlock
+Separates health state from freshness timestamps.
+STALE must not display fake motion.
+
+C10 RunArchiveRow
+No per-row decorative card.
+Primary: project + status.
+Secondary: stage/update/duration according to context.
+Abnormal health appears conditionally.
+No command-plane swipe actions.
+
+C11 DestinationRow
+Native NavigationLink behavior.
+Supports label + optional concise count/summary.
+
+C12 CachedSnapshotNotice
+Shows cached/offline provenance and last sync.
+Never claims cached state is current live truth.
+
+C13 NewEventsGate
+Shown while a user is inspecting a live collection and new data arrives.
+Example: 7 NEW EVENTS / RESUME LIVE.
+The view does not auto-yank the reader.
+
+C14 MotionNumericText
+Local numeric transition wrapper.
+Must own its animation transaction locally.
+
+C15 LocalElapsedClock
+Uses scheduled local refresh only while a run is live.
+Terminal/history runs render a static ended duration.
+Must not force the entire Overview view tree to update each second.
+
+C16 AccessibilityEventRouter
+Centralizes VoiceOver announcements for high-value semantic changes.
+Normal heartbeat/test count noise is silent.
+
+======================================================================
+7. CORE 3 PAGE CONTRACT
+======================================================================
+
+7.1 Overview
+Question: What is happening now, is observation trustworthy, and is it really complete?
+
+Order:
+ObserverPageIdentity
+ConnectionIncidentBar?
+ObserverStatusHero or ActiveRunsAggregate
+CompletionTruthBlock? (when finalization/terminal truth matters)
+CurrentOperationBlock?
+DenseMetadataNode
+HealthFreshnessBlock?
+TestProgressRow?
+LatestCheckpointRow?
+NavigationLink -> Run Detail
+
+Focus Run Resolver:
+1. authoritative focus_run_id if provided
+2. exactly one active presentation candidate (PENDING/STARTING/RUNNING/WAITING_APPROVAL/VERIFYING/FINALIZING) -> focus it
+3. zero active -> most recent run as LAST RUN
+4. multiple active without authoritative focus -> aggregate mode
+
+Aggregate mode never fabricates one ExecutionStatus.
+
+7.2 Runs
+Question: What runs exist and which one do I need?
+
+Structure:
+Page Display: RUNS
+ConnectionIncidentBar?
+.searchable
+.searchScopes for a few broad scopes
+Current section when applicable
+History archive
+CachedSnapshotNotice when applicable
+
+Search scopes candidate:
+ALL / ACTIVE / COMPLETED / ATTENTION
+Do not expose every raw enum as a scope.
+Advanced filters may use native Menu/Picker.
+
+Large history:
+- cursor-based pagination contract
+- stable run IDs
+- preserve reading position during live updates
+- do not reorder under the user's finger when they are inspecting/scrolled
+
+7.3 Run Detail / Summary
+Question: What exactly is true about this run, and where is the evidence?
+
+Order:
+ConnectionIncidentBar? labeled LIVE CONNECTION when relevant
+ObserverStatusHero
+CompletionEvidenceBlock?
+CurrentOperationBlock?
+TruthMatrix
+StageAndTestsSummary
+DestinationList:
+- Timeline
+- Tests
+- Checkpoints & Artifacts
+- Logs
+- Raw Events
+LastEventRow
+UpdatedAtRow
+
+No giant segmented control.
+Historical terminal run remains still after entry transition.
+Current app connection must not be presented as historical run truth.
+
+======================================================================
+8. REALTIME COLLECTION / LARGE DATA CONTRACT
+======================================================================
+
+8.1 Stable identity
+All Runs / Timeline / Logs / Raw Events use stable IDs.
+Event identity is based on authoritative event_id and ordering on epoch/seq as appropriate.
+
+8.2 Reader protection
+Live collections have two modes:
+LIVE_FOLLOW
+INSPECTING_HISTORY
+
+Transition to INSPECTING_HISTORY when:
+- user scrolls away from the live edge
+- user expands/selects an event/log detail
+- user starts text selection/copy interaction where applicable
+
+While inspecting:
+- buffer or merge new items without moving the visible anchor
+- update a NewEventsGate counter
+- Resume Live is explicit
+
+8.3 Scroll retention
+A ScrollRetentionAdapter owns platform-specific scroll-position APIs.
+Preferred modern implementation may use ScrollPosition/scrollPosition with stable target IDs.
+Fallback may use stable IDs + ScrollViewReader / explicit anchor bookkeeping if deployment target requires it.
+Leaf pages do not directly depend on one OS-specific scroll API.
+
+8.4 Pagination
+Timeline / Raw Events / large run history accept opaque cursor pagination.
+Client must not synthesize numeric pages if server contract is cursor-based.
+NOT_FOUND does not prove end-of-history unless the API contract says so.
+
+8.5 Logs search
+Large log search does not run full-array filtering on the MainActor.
+Contract:
+- asynchronous/cancellable search worker (Actor or equivalent isolation)
+- incremental result batches
+- preserve grouping identity where possible
+- search query generation is separate from live stream ingestion
+- cancellation on query revision
+
+======================================================================
+9. MOTION CONTRACT IN DESIGN SYSTEM
+======================================================================
+
+Stillness budget: most of the interface is still.
+Motion is supplemental and event-driven.
+
+Allowed:
+- numeric content transitions for real numeric change
+- symbol replace for real semantic state transition
+- one-shot verification sweep on entering VERIFYING
+- one-shot event/archive insertion
+- edge signal tick on a real heartbeat event identity
+
+Forbidden:
+- fake heartbeat timer
+- endless error shake
+- shimmer baseline
+- neon breathing border
+- decorative card bounce
+- state inference from animation completion
+
+Reduce Motion:
+- loops removed
+- spatial sweeps -> opacity/static fallback
+- symbol change -> restrained content transition or direct replace
+- numeric transitions may reduce to opacity/direct change
+
+Low Power / inactive scene:
+- nonessential indefinite motion suppressed
+
+Version compatibility:
+- iOS 27 Draw effects are enhancement-only and may not be required by V1 baseline
+- all advanced effects sit behind compatibility wrappers
+
+======================================================================
+10. ACCESSIBILITY CONTRACT
+======================================================================
+
+Required semantics:
+- status is icon + text; never color-only
+- Dynamic Type supported through reflow
+- VoiceOver labels describe semantic state, not decorative motion
+- Reduce Motion supported
+- Increase Contrast supported by semantic role tokens
+- privacy-sensitive lock-screen/widget content supports redaction
+
+Accessibility announcements:
+High-value candidates:
+- COMPLETED
+- FAILED
+- WAITING_APPROVAL
+- SUSPECTED_STUCK threshold escalation
+- RECONNECTED after an incident
+
+Normally silent:
+- heartbeat
+- elapsed timer tick
+- test count increment
+- ordinary stage metadata updates unless focus/interaction requires it
+
+Announcements are deduplicated/debounced by semantic event identity.
+Do not move VoiceOver focus merely because live data updated.
+
+======================================================================
+11. LIVE ACTIVITY / WIDGET CONTRACT
+======================================================================
+
+Live Activity:
+- projection only; not truth authority
+- use ActivityKit stale state/stale date to express out-of-date content
+- compact payload: status / stage / progress / health / last update
+- no logs, command args, secrets, full paths
+- no arbitrary foreground animation loop ownership
+- Activity lifecycle state is not ExecutionStatus
+
+Widget:
+- snapshot/timeline projection, not realtime authority
+- always expose freshness / last updated when state could be mistaken for live
+- WidgetKit may update later than requested timeline dates, so the UI must not imply exact real-time freshness
+- privacy-sensitive project/file content uses system privacy/redaction mechanisms
+
+Widget/Live Activity must not reuse the full foreground Core 3 views.
+They use dedicated compact projection structs.
+
+======================================================================
+12. SWIFTUI STATE OWNERSHIP CONTRACT
+======================================================================
+
+Layer 1 / Domain snapshots
+Authoritative DTO/events from backend/storage.
+No SwiftUI.
+
+Layer 2 / Projection Core
+Pure presentation builders and reducers.
+- no network
+- no SwiftUI Color/Font
+- deterministic and unit-testable
+- handles focus run presentation routing
+- handles completion truth projection
+- handles display label projection
+- never mutates domain truth
+
+Layer 3 / Screen State Stores
+Responsible for:
+- snapshot lifecycle
+- live/cached provenance
+- search/filter query state
+- pagination cursors
+- live-follow vs inspecting state
+- loading/partial/offline/error UI state
+
+Preferred observation mechanism depends on deployment target.
+Do not let use of @Observable vs ObservableObject become a product-level contract.
+
+Layer 4 / SwiftUI Views
+Pure rendering + local ephemeral interaction state.
+No direct socket/database access.
+No execution-state inference.
+
+Layer 5 / Surface Adapters
+- Motion compatibility adapter
+- Scroll retention adapter
+- Widget projection adapter
+- Live Activity projection adapter
+- Haptics adapter if later approved
+
+======================================================================
+13. REQUIRED SWIFTUI CONTRACT TYPES
+======================================================================
+
+protocol ObserverProjectionBuilding
+- makeOverview(...)
+- makeRunRow(...)
+- makeRunDetail(...)
+- makeWidgetProjection(...)
+- makeLiveActivityProjection(...)
+
+protocol ObserverScrollRetention
+- bindStableIdentity(...)
+- captureVisibleAnchor(...)
+- restoreVisibleAnchor(...)
+- moveToLiveEdge(...)
+
+protocol ObserverLogSearching
+- search(query, scope, revision) async throws -> AsyncStream/SearchBatch equivalent
+- cancel(revision)
+
+protocol ObserverRealtimeTransport
+Transport abstraction only.
+The currently frozen project target may remain URLSessionWebSocketTask.
+Network.framework remains a separate technical review candidate and is NOT silently promoted by this document.
+
+protocol ObserverAccessibilityRouting
+- announcement(for semanticEvent) -> optional announcement
+- deduplicate by event identity / revision
+
+protocol ObserverMotionRendering
+- semantic command -> platform presentation
+- cannot mutate state
+
+======================================================================
+14. SCREEN STATE MACHINE CONTRACT
+======================================================================
+
+Every core screen supports:
+LOADING
+DATA
+PARTIAL
+EMPTY where meaningful
+OFFLINE/CACHED
+ERROR
+
+Connection errors are not run failures.
+Schema/data projection errors are not execution failures.
+A run FAILED state may coexist with ONLINE connection.
+A RUNNING last-known state may coexist with OFFLINE connection.
+
+Loading:
+- static stable skeleton geometry
+- no looping shimmer baseline
+
+Partial:
+- render known authoritative fields
+- mark missing modules/sections explicitly
+- do not replace missing values with guesses
+
+Offline:
+- preserve cached truth
+- show CachedSnapshotNotice + last sync
+
+======================================================================
+15. PRIVACY / REDACTION
+======================================================================
+
+Privacy controls projected into surfaces:
+- Show Project Name on Lock Screen
+- Show File Names
+- Show Command Names
+- Sensitive Mode
+- Notification Preview
+
+Never expose:
+- secret values
+- auth tokens
+- raw credentials
+- full command arguments by default
+- sensitive full paths on lock screen surfaces
+
+Privacy is a projection decision, not a mutation of stored truth.
+
+======================================================================
+16. PREVIEW / FIXTURE MATRIX
+======================================================================
+
+Minimum 18 preview scenarios:
+01 RUNNING / ACTIVE / ONLINE
+02 STARTING / ACTIVE / ONLINE
+03 VERIFYING / ACTIVE / ONLINE
+04 FINALIZING / ACTIVE / ONLINE
+05 COMPLETED + ARTIFACT VERIFIED + PRESENTATION UNKNOWN
+06 COMPLETED + PRESENTATION CONFIRMED
+07 FAILED / ONLINE
+08 ABORTED
+09 RESUMABLE
+10 WAITING_APPROVAL
+11 RUNNING + SLOW
+12 RUNNING + STALE
+13 RUNNING + SUSPECTED_STUCK
+14 RUNNING last-known + OFFLINE
+15 RUNNING + RECONNECTING
+16 AUTH_FAILED + cached run
+17 MULTIPLE ACTIVE / aggregate Overview
+18 NO RUN / empty
+
+Additional data-scale fixtures:
+- 10,000+ semantic timeline rows via paged fixture generator
+- 1,000,000-log search behavior tested at search-service layer with synthetic fixture or benchmark harness, not all rendered simultaneously
+- long localized status/project names
+- accessibility Dynamic Type sizes
+- privacy redaction enabled
+
+======================================================================
+17. IMPLEMENTATION ORDER
+======================================================================
+
+F0 Domain / DTO mapping audit
+F1 Design tokens + semantic roles
+F2 Projection Core
+F3 Preview Fixtures
+F4 Shared components C01-C16
+F5 App shell / tabs / navigation
+F6 Overview
+F7 Runs + search scopes + pagination
+F8 Run Detail / Summary
+F9 Timeline semantic grouping + cursor pagination
+F10 Tests
+F11 Checkpoints & Artifacts
+F12 Logs + cancellable background search + live-follow gate
+F13 Raw Events
+F14 Connection / offline provenance integration
+F15 Motion adapter
+F16 Accessibility router / Dynamic Type regression
+F17 Widget projection
+F18 Live Activity projection
+F19 Dark/contrast/privacy regression
+F20 real transport integration after separate transport review
+
+Network is not first.
+Visual polish is not first.
+Truth projection + fixtures come before realtime transport.
+
+======================================================================
+18. DEFINITION OF DONE FOR THIS CONTRACT
+======================================================================
+
+A real SwiftUI implementation can claim CONTRACT IMPLEMENTED only when:
+- raw domain state remains separated across all status dimensions
+- all three core pages render from projections, not direct truth inference in leaf views
+- no command-plane controls are introduced in Observer v1
+- Dynamic Type reflows core components without semantic truncation
+- Reduce Motion leaves all semantics understandable
+- offline cached provenance is explicit
+- real-time collection reading position is protected
+- cursor pagination works for history surfaces
+- Logs search is cancellable and off-main for large datasets
+- accessibility announcements are high-value and deduplicated
+- Widget freshness is explicit
+- Live Activity stale content is explicit
+- no iOS 27-only visual effect is required for baseline functionality
+- Preview Matrix 01-18 is covered
+- UI snapshot/accessibility tests cover critical states
+- real Xcode build/simulator/device tests pass for the actual deployment target
+
+This document does not itself satisfy those runtime criteria.
+
+======================================================================
+19. SOURCE / PLATFORM NOTES VERIFIED FOR THIS TASK
+======================================================================
+
+Current Apple documentation supports the architectural choices used here:
+- AnyLayout can switch layout types while preserving subview state, including Dynamic Type-driven H/V layout changes.
+- ViewThatFits selects the first child layout that fits available constraints.
+- ContentTransition includes numericText and symbol-effect transitions.
+- ScrollPosition / scrollPosition provide semantic position binding with stable IDs on supporting OS versions.
+- searchScopes provides native scoped search UI.
+- TimelineView performs scheduled local view updates and exposes cadence.
+- Accessibility announcement notifications support priority.
+- ActivityKit supports staleDate / ActivityState.stale for out-of-date Live Activity content.
+- WidgetKit timeline dates are requested update dates and may render later, so widgets are not exact realtime surfaces.
+- Widget privacySensitive/redaction mechanisms exist for lock-screen sensitive content.
+
+Exact deployment-target availability must be verified in the real Xcode project before implementation. This contract intentionally isolates newer APIs behind adapters/fallbacks rather than assuming a deployment target.
+
+======================================================================
+20. GOVERNANCE / EVIDENCE STATE
+======================================================================
+
+Formal Load State: COMPLETE for 00 + applicable GP chain at task start.
+Audit: GP-002 triggered by explicit ^5 audit request.
+SC-001: required clean streak = 5 via GP-002 Native Adapter.
+Authorization: READ-ONLY / SANDBOX ARTIFACT CREATION. No real app mutation authorized.
+
+Project Organ:
+- Current Manifest observed as R8 CURRENT_COMPATIBLE_RELEASE.
+- UPO-05 current provider revision differs from the exact R8 revision recorded in Manifest during this run.
+- Therefore PROJECT_ORGAN_LOAD_BASELINE is PARTIAL / REVALIDATION_REQUIRED for formal Composition assurance.
+- This low-risk read-only design/contract artifact may continue, but it must not be represented as a formally current complete UPO Assembly result.
+
+Verification Tier:
+- source-grounded design synthesis
+- official Apple documentation spot verification
+- static machine-readable contract lint
+- Swift parser checks for reference Swift files
+- pure Swift contract-model execution where applicable
+- same-executor multi-pass audit
+
+Not performed:
+- Xcode build
+- iOS Simulator
+- iPhone device test
+- UI snapshot test in Apple runtime
+- independent executor reproduction
+- production behavior validation
+
+Terminal state:
+- Local Design/Static Audit: BOUNDED_CONVERGED (final ^5 clean streak passed; no open P0/P1 in inspected design/static scope).
+- Formal Task / Project Organ assurance: PARTIAL / REVALIDATION_REQUIRED because UPO-05 current provider revision does not match the exact revision bound by current R8 Manifest.
+- This Candidate is not promoted to formal Canonical or Assembly PASS.
+
+
+======================================================================
+APPENDIX A / ^5 AUDIT REPORT
+======================================================================
+
+OBSERVER DESIGN SYSTEM + SWIFTUI CONTRACT V1
+^5 ATTACK AUDIT REPORT
+
+Audit mode:
+- formal audit requested by user
+- read-only/static/sandbox scope
+- required clean streak: 5
+- target assurance: design + implementation-contract integrity, not production runtime
+
+MATERIAL FINDINGS FOUND BEFORE FINAL CLEAN STREAK
+
+F-01 / TOKEN -> DOMAIN LEAKAGE
+Attack:
+A naive Design System often places SwiftUI Color/Font directly into domain status models.
+Risk:
+Presentation styling becomes entangled with truth/state definitions and later transport/storage logic.
+Repair:
+Semantic status/tone remains a presentation role. Pure Projection Core contains no SwiftUI Color/Font. SwiftUI maps presentation roles to visual tokens.
+State: FIXED IN CANDIDATE.
+
+F-02 / LEAF VIEW DIRECT RAW DTO COUPLING
+Attack:
+If every component accepts RunStatus directly, truth separation rules get reimplemented across many leaf views.
+Risk:
+Offline/Failed, Completed/Presented and historical/live connection semantics can drift screen by screen.
+Repair:
+Added bounded OverviewPresentation / RunRowPresentation / RunDetailPresentation plus a pure projection builder. Leaf views render projections only.
+State: FIXED IN CANDIDATE.
+
+F-03 / PER-SECOND ELAPSED TIMER RECOMPUTES WHOLE PAGE
+Attack:
+Driving elapsed time from the root store at 1 Hz creates unnecessary Overview updates and motion churn.
+Repair:
+Added LocalElapsedClock using local scheduled rendering. The authoritative run snapshot does not mutate once per second merely to animate elapsed text.
+State: FIXED IN CANDIDATE.
+
+F-04 / LARGE LOG SEARCH ON MAIN ACTOR
+Attack:
+A convenient SwiftUI `logs.filter { ... }` implementation will collapse under very large logs and can freeze interactions.
+Repair:
+Added ObserverLogSearching contract: async, cancellable, incremental batches, isolated worker, grouping preservation.
+State: FIXED IN CANDIDATE.
+
+F-05 / LIVE COLLECTION READER DISPLACEMENT
+Attack:
+Stable IDs alone do not protect a user who is selecting/copying/expanding historical content while live updates arrive.
+Repair:
+Added LIVE_FOLLOW / INSPECTING_HISTORY modes and NewEventsGate. New items do not auto-yank the visible anchor while inspecting.
+State: FIXED IN CANDIDATE.
+
+F-06 / DYNAMIC TYPE AS POSTER SHRINK
+Attack:
+Keeping WALLHACK horizontal metadata geometry by shrinking type breaks accessibility and the source visual system's information discipline.
+Repair:
+Reflow is contractual. AnyLayout-style H/V switching and ViewThatFits-style degradation are the preferred strategy; two-line status display is allowed.
+State: FIXED IN CANDIDATE.
+
+F-07 / FOREGROUND VIEW REUSE IN WIDGET / LIVE ACTIVITY
+Attack:
+Reusing Core 3 foreground components in WidgetKit/ActivityKit conflates update lifecycle, privacy and motion assumptions.
+Repair:
+Dedicated WidgetProjection / LiveActivityProjection and compact surface views are mandatory.
+State: FIXED IN CANDIDATE.
+
+F-08 / VOICEOVER LIVE STREAM SPAM
+Attack:
+If every status/heartbeat/test change becomes an announcement, assistive output becomes unusable.
+Repair:
+Central AccessibilityEventRouter; heartbeat/test-count noise silent; only high-value semantic events announce and are deduplicated by event identity/revision.
+State: FIXED IN CANDIDATE.
+
+F-09 / UNKNOWN DEPLOYMENT TARGET HARDWIRES MODERN APIS
+Attack:
+The real Xcode deployment target has not been established in this design task. Hard-depending on newest ScrollPosition/symbol effects could make the contract non-buildable.
+Repair:
+API compatibility seams are contractual. Modern APIs are preferred behind adapters; fallback implementation is allowed. iOS 27 Draw remains enhancement-only.
+State: FIXED IN CANDIDATE.
+
+F-10 / RESEARCH SILENTLY REPLACES FROZEN WEBSOCKET TARGET
+Attack:
+Recent Apple guidance can tempt the UI spec to silently swap URLSessionWebSocketTask for Network.framework.
+Repair:
+Realtime transport is abstracted. Existing frozen target remains unchanged; Network.framework is only TECH_REVIEW_CANDIDATE pending a separate decision.
+State: FIXED IN CANDIDATE.
+
+F-11 / RESUMABLE MISCLASSIFIED AS ACTIVE
+Attack:
+The first reference FocusRunResolver used `!isTerminal` as a proxy for active. RESUMABLE is nonterminal but does not necessarily mean currently executing.
+Repair:
+Added explicit isActivePresentationCandidate limited to PENDING/STARTING/RUNNING/WAITING_APPROVAL/VERIFYING/FINALIZING. RESUMABLE no longer auto-wins active focus.
+State: FIXED IN REFERENCE CORE.
+
+F-12 / EXPORTED SILENTLY PROMOTED TO VERIFIED
+Attack:
+The first reference CompletionTruthProjector treated ArtifactStatus.EXPORTED as equivalent to VERIFIED. The authoritative model does not guarantee that implication.
+Repair:
+artifactVerified is true only for explicit VERIFIED in the reference core. Any future exported+verified composite must come from explicit backend evidence.
+State: FIXED IN REFERENCE CORE.
+
+F-13 / TERMINAL ELAPSED CLOCK CONTINUES TICKING
+Attack:
+The first LocalElapsedClock always used a 1-second TimelineView, including terminal/history runs.
+Repair:
+Added endedAt. Terminal/history duration is static; only live elapsed values schedule periodic redraws.
+State: FIXED IN REFERENCE COMPONENT.
+
+F-14 / CONNECTION INCIDENT SYMBOL HARDCODED
+Attack:
+The first ConnectionIncidentBar used one Wi-Fi warning symbol for every incident, weakening AUTH_FAILED/SERVER_UNREACHABLE semantics.
+Repair:
+Symbol is now an explicit presentation input from the connection projection.
+State: FIXED IN REFERENCE COMPONENT.
+
+FINAL ^5 CLEAN STREAK ON REPAIRED BASELINE
+
+PASS 1 / TRUTH + AUTHORITY ATTACK
+Attacked:
+- cross-dimension state collapse
+- direct leaf inference
+- cached state presented as live
+- Widget/Live Activity presented as truth authority
+- command-plane leakage
+Result: NO NEW P0/P1. clean_streak=1/5
+
+PASS 2 / WALLHACK DESIGN SYSTEM REGRESSION
+Attacked:
+- fake metadata
+- card rain
+- fixed yellow identity
+- second XXL display
+- Dense Node without structural host
+- terminal/cyber-HUD drift
+- spacing/radius proliferation
+Result: NO NEW P0/P1. clean_streak=2/5
+
+PASS 3 / SWIFTUI IMPLEMENTABILITY + VERSION ATTACK
+Attacked:
+- Dynamic Type
+- modern API availability
+- local timer redraw isolation
+- state observation mechanism coupling
+- scrolling compatibility
+- motion fallbacks
+Result: NO NEW P0/P1. clean_streak=3/5
+
+PASS 4 / SCALE + REALTIME + FAILURE PATH ATTACK
+Attacked:
+- million-log search path
+- pagination
+- live reader displacement
+- offline cached provenance
+- connection error vs run failure
+- partial data
+- cancellation/race surfaces
+Result: NO NEW P0/P1. clean_streak=4/5
+
+PASS 5 / ACCESSIBILITY + SURFACE BOUNDARY + REGRESSION ATTACK
+Attacked:
+- VoiceOver spam
+- Reduce Motion
+- color-only state
+- privacy-sensitive widget content
+- Live Activity stale state
+- widget freshness ambiguity
+- preview/test coverage
+Result: NO NEW P0/P1. clean_streak=5/5
+
+SC-001 threshold: PASS 5/5.
+
+OPEN P0: 0
+OPEN P1: 0
+
+REMAINING IMPORTANT UNKNOWNS
+- actual Xcode deployment target
+- actual Observer repository anatomy and existing type names
+- actual backend pagination/search contracts
+- actual realtime transport final decision
+- actual simulator/device rendering at accessibility sizes
+- energy/memory performance
+- real SF Symbol availability for every chosen icon on the final target
+- independent executor/device reproduction
+
+PROJECT ORGAN LIMIT
+UPO-05 provider revision drifted from the exact revision bound in current R8 Manifest during this task. Formal Project Organ Composition assurance is therefore PARTIAL / REVALIDATION_REQUIRED. This does not invalidate the direct design/static checks, but it prevents claiming a formally current complete UPO Assembly/Composition result.
+
+AUDIT TERMINAL
+Local Design/Static Audit: BOUNDED_CONVERGED within DESIGN / STATIC / SANDBOX scope.
+Formal Task Terminal: PARTIAL / REVALIDATION_REQUIRED because UPO-05 current provider revision does not match the exact R8 Manifest binding.
+No Canonical promotion or formal Assembly PASS is claimed.
+
+
+======================================================================
+APPENDIX B / VERIFICATION SUMMARY
+======================================================================
+
+VERIFICATION SUMMARY
+====================
+Machine-readable contract lint: 71/71 PASS
+Swift parse checks: 4/4 PASS
+Pure Swift presentation-core executable assertions: 18/18 PASS
+Final non-isomorphic ^5 audit passes: 5/5 PASS
+Open P0: 0
+Open P1: 0
+
+Observed formal revalidation:
+- 00 unchanged
+- GP-001 unchanged
+- GP-002 unchanged
+- GP-003 current revision bound and SC-001 route still valid
+- SC-001 unchanged
+- UPO-00 unchanged
+- UPO-01 unchanged
+- UPO-06 unchanged
+- R8 Manifest unchanged
+- UPO-05 CURRENT DOCUMENT REVISION != R8 BOUND REVISION
+
+Therefore:
+Local design/static candidate = BOUNDED_CONVERGED
+Formal Project Organ / task terminal = PARTIAL / REVALIDATION_REQUIRED
+
+
+======================================================================
+APPENDIX / ObserverPresentationCore.swift
+======================================================================
+
+import Foundation
+
+public enum ExecutionStatus: String, CaseIterable, Sendable {
+    case pending = "PENDING", starting = "STARTING", running = "RUNNING"
+    case waitingApproval = "WAITING_APPROVAL", verifying = "VERIFYING"
+    case finalizing = "FINALIZING", completed = "COMPLETED", failed = "FAILED"
+    case aborted = "ABORTED", resumable = "RESUMABLE", unknown = "UNKNOWN"
+
+    public var isTerminal: Bool {
+        switch self {
+        case .completed, .failed, .aborted: true
+        default: false
+        }
+    }
+
+    public var isActivePresentationCandidate: Bool {
+        switch self {
+        case .pending, .starting, .running, .waitingApproval, .verifying, .finalizing: true
+        case .completed, .failed, .aborted, .resumable, .unknown: false
+        }
+    }
+}
+
+public enum RuntimeHealth: String, Sendable { case active = "ACTIVE", slow = "SLOW", stale = "STALE", suspectedStuck = "SUSPECTED_STUCK", unknown = "UNKNOWN" }
+public enum ConnectionState: String, Sendable { case connecting = "CONNECTING", online = "ONLINE", reconnecting = "RECONNECTING", offline = "OFFLINE", serverUnreachable = "SERVER_UNREACHABLE", authFailed = "AUTH_FAILED" }
+public enum ArtifactStatus: String, Sendable { case notStarted = "NOT_STARTED", creating = "CREATING", created = "CREATED", verifying = "VERIFYING", verified = "VERIFIED", exported = "EXPORTED", failed = "FAILED" }
+public enum PresentationStatus: String, Sendable { case unknown = "UNKNOWN", confirmedPresented = "CONFIRMED_PRESENTED" }
+
+public struct RunSnapshot: Identifiable, Sendable {
+    public let id: String
+    public let projectName: String
+    public let execution: ExecutionStatus
+    public let health: RuntimeHealth
+    public let artifact: ArtifactStatus
+    public let presentation: PresentationStatus
+    public let updatedAt: Date
+
+    public init(id: String, projectName: String, execution: ExecutionStatus, health: RuntimeHealth, artifact: ArtifactStatus, presentation: PresentationStatus, updatedAt: Date) {
+        self.id = id; self.projectName = projectName; self.execution = execution; self.health = health; self.artifact = artifact; self.presentation = presentation; self.updatedAt = updatedAt
+    }
+}
+
+public struct StatusPresentation: Equatable, Sendable {
+    public let primary: String
+    public let secondary: String?
+    public let rawValue: String
+}
+
+public enum ExecutionStatusPresenter {
+    public static func present(_ status: ExecutionStatus) -> StatusPresentation {
+        switch status {
+        case .waitingApproval: .init(primary: "WAITING", secondary: "APPROVAL REQUIRED", rawValue: status.rawValue)
+        default: .init(primary: status.rawValue, secondary: nil, rawValue: status.rawValue)
+        }
+    }
+}
+
+public enum FocusMode: Equatable, Sendable {
+    case focused(String)
+    case aggregate([String])
+    case lastRun(String)
+    case empty
+}
+
+public enum FocusRunResolver {
+    public static func resolve(runs: [RunSnapshot], authoritativeFocusID: String?) -> FocusMode {
+        if let focus = authoritativeFocusID, runs.contains(where: { $0.id == focus }) { return .focused(focus) }
+        let active = runs.filter { $0.execution.isActivePresentationCandidate }
+        if active.count == 1 { return .focused(active[0].id) }
+        if active.count > 1 { return .aggregate(active.map(\.id)) }
+        if let latest = runs.max(by: { $0.updatedAt < $1.updatedAt }) { return .lastRun(latest.id) }
+        return .empty
+    }
+}
+
+public struct CompletionTruth: Equatable, Sendable {
+    public let engineeringComplete: Bool
+    public let artifactVerified: Bool
+    public let presentationConfirmed: Bool
+    public let presentationUnknown: Bool
+}
+
+public enum CompletionTruthProjector {
+    public static func project(_ run: RunSnapshot) -> CompletionTruth {
+        .init(
+            engineeringComplete: run.execution == .completed,
+            artifactVerified: run.artifact == .verified,
+            presentationConfirmed: run.presentation == .confirmedPresented,
+            presentationUnknown: run.presentation == .unknown
+        )
+    }
+}
+
+public enum AccessibilitySemanticEvent: Equatable, Sendable {
+    case completed(eventID: String)
+    case failed(eventID: String)
+    case waitingApproval(eventID: String)
+    case suspectedStuck(eventID: String)
+    case reconnected(eventID: String)
+    case heartbeat(eventID: String)
+    case testCountChanged(eventID: String)
+}
+
+public enum AccessibilityAnnouncementPolicy {
+    public static func announcement(for event: AccessibilitySemanticEvent) -> String? {
+        switch event {
+        case .completed: "Run completed"
+        case .failed: "Run failed"
+        case .waitingApproval: "Approval required"
+        case .suspectedStuck: "Run may be stuck"
+        case .reconnected: "Connection restored"
+        case .heartbeat, .testCountChanged: nil
+        }
+    }
+}
+
+
+======================================================================
+APPENDIX / ObserverDesignTokens.swift
+======================================================================
+
+import SwiftUI
+
+public enum ObserverSpacing {
+    public static let x1: CGFloat = 4
+    public static let x2: CGFloat = 8
+    public static let x3: CGFloat = 12
+    public static let x4: CGFloat = 16
+    public static let x5: CGFloat = 20
+    public static let x6: CGFloat = 24
+    public static let x8: CGFloat = 32
+    public static let x10: CGFloat = 40
+    public static let x14: CGFloat = 56
+}
+
+public enum ObserverRadius {
+    public static let none: CGFloat = 0
+    public static let micro: CGFloat = 4
+    public static let control: CGFloat = 8
+    public static let container: CGFloat = 12
+}
+
+public enum ObserverStatusTone: Sendable { case positive, warning, negative, neutral, connection }
+
+public struct ObserverSemanticPalette {
+    public static func color(for tone: ObserverStatusTone) -> Color {
+        switch tone {
+        case .positive: .green
+        case .warning: .orange
+        case .negative: .red
+        case .neutral: .secondary
+        case .connection: .blue
+        }
+    }
+}
+
+public struct ObserverDisplayText: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var displaySize: CGFloat = 56
+    let text: String
+    public init(_ text: String) { self.text = text }
+    public var body: some View {
+        Text(text)
+            .font(.system(size: displaySize, weight: .semibold, design: .default))
+            .lineLimit(2)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+public struct ObserverMetadataKey: View {
+    let text: String
+    public init(_ text: String) { self.text = text }
+    public var body: some View {
+        Text(text.uppercased())
+            .font(.caption2.weight(.medium))
+            .tracking(0.4)
+            .foregroundStyle(.secondary)
+    }
+}
+
+
+======================================================================
+APPENDIX / ObserverComponentContracts.swift
+======================================================================
+
+import SwiftUI
+
+public struct MetadataField: Identifiable, Hashable {
+    public let id: String
+    public let key: String
+    public let value: String
+    public init(id: String, key: String, value: String) { self.id = id; self.key = key; self.value = value }
+}
+
+public struct DenseMetadataNode: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let fields: [MetadataField]
+    public init(fields: [MetadataField]) { self.fields = fields }
+
+    public var body: some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: ObserverSpacing.x3))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: ObserverSpacing.x5))
+        layout {
+            ForEach(fields) { field in
+                VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
+                    ObserverMetadataKey(field.key)
+                    Text(field.value).font(.callout).monospacedDigit()
+                }
+            }
+        }
+    }
+}
+
+public struct MotionNumericText: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let value: Int
+    public init(value: Int) { self.value = value }
+    public var body: some View {
+        Text(value.formatted())
+            .monospacedDigit()
+            .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(value)))
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: value)
+    }
+}
+
+public struct LocalElapsedClock: View {
+    let startedAt: Date
+    let endedAt: Date?
+    public init(startedAt: Date, endedAt: Date? = nil) { self.startedAt = startedAt; self.endedAt = endedAt }
+    @ViewBuilder public var body: some View {
+        if let endedAt {
+            Text(Self.format(max(0, endedAt.timeIntervalSince(startedAt))))
+                .monospacedDigit()
+        } else {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(Self.format(max(0, context.date.timeIntervalSince(startedAt))))
+                    .monospacedDigit()
+            }
+        }
+    }
+    static func format(_ interval: TimeInterval) -> String {
+        let seconds = Int(interval)
+        return String(format: "%02d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60)
+    }
+}
+
+public struct ConnectionIncidentBar: View {
+    let symbolName: String
+    let title: String
+    let detail: String?
+    public init(symbolName: String, title: String, detail: String? = nil) { self.symbolName = symbolName; self.title = title; self.detail = detail }
+    public var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: ObserverSpacing.x3) {
+            Image(systemName: symbolName)
+            VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
+                Text(title).font(.headline)
+                if let detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, ObserverSpacing.x3)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+}
+
+
+======================================================================
+APPENDIX / ObserverPreviewScenarios.swift
+======================================================================
+
+import Foundation
+
+public enum ObserverPreviewScenario: String, CaseIterable, Sendable {
+    case runningActiveOnline
+    case startingActiveOnline
+    case verifyingActiveOnline
+    case finalizingActiveOnline
+    case completedVerifiedPresentationUnknown
+    case completedPresentationConfirmed
+    case failedOnline
+    case aborted
+    case resumable
+    case waitingApproval
+    case runningSlow
+    case runningStale
+    case runningSuspectedStuck
+    case runningLastKnownOffline
+    case runningReconnecting
+    case authFailedCached
+    case multipleActiveAggregate
+    case noRunEmpty
+}
+
+
+======================================================================
+APPENDIX / ObserverPresentationCoreTests.swift
+======================================================================
+
+import Foundation
+
+func expect(_ condition: @autoclosure () -> Bool, _ name: String) {
+    if !condition() { fputs("FAIL: \(name)\n", stderr); exit(1) }
+    print("PASS: \(name)")
+}
+
+@main
+struct ContractCoreTestMain {
+    static func main() {
+        let now = Date()
+        let running = RunSnapshot(id: "r1", projectName: "A", execution: .running, health: .active, artifact: .creating, presentation: .unknown, updatedAt: now)
+        let running2 = RunSnapshot(id: "r2", projectName: "B", execution: .verifying, health: .active, artifact: .verifying, presentation: .unknown, updatedAt: now.addingTimeInterval(-1))
+        let completed = RunSnapshot(id: "r3", projectName: "C", execution: .completed, health: .active, artifact: .verified, presentation: .unknown, updatedAt: now.addingTimeInterval(-2))
+
+        expect(FocusRunResolver.resolve(runs: [], authoritativeFocusID: nil) == .empty, "focus empty")
+        expect(FocusRunResolver.resolve(runs: [running], authoritativeFocusID: nil) == .focused("r1"), "single active focused")
+        expect(FocusRunResolver.resolve(runs: [running, running2], authoritativeFocusID: nil) == .aggregate(["r1","r2"]), "multiple active aggregate")
+        expect(FocusRunResolver.resolve(runs: [running, running2], authoritativeFocusID: "r2") == .focused("r2"), "authoritative focus wins")
+        expect(FocusRunResolver.resolve(runs: [completed], authoritativeFocusID: nil) == .lastRun("r3"), "terminal becomes last run")
+        let resumable = RunSnapshot(id: "r4", projectName: "D", execution: .resumable, health: .unknown, artifact: .created, presentation: .unknown, updatedAt: now.addingTimeInterval(2))
+        expect(FocusRunResolver.resolve(runs: [completed, resumable], authoritativeFocusID: nil) == .lastRun("r4"), "resumable is not auto-active")
+
+        let truth = CompletionTruthProjector.project(completed)
+        expect(truth.engineeringComplete, "completed means engineering complete")
+        expect(truth.artifactVerified, "verified artifact projected independently")
+        expect(!truth.presentationConfirmed, "presentation not invented")
+        expect(truth.presentationUnknown, "presentation unknown preserved")
+        let exported = RunSnapshot(id: "r5", projectName: "E", execution: .completed, health: .active, artifact: .exported, presentation: .unknown, updatedAt: now)
+        expect(!CompletionTruthProjector.project(exported).artifactVerified, "exported is not silently verified")
+
+        let waiting = ExecutionStatusPresenter.present(.waitingApproval)
+        expect(waiting.primary == "WAITING", "waiting display label")
+        expect(waiting.secondary == "APPROVAL REQUIRED", "waiting secondary label")
+        expect(waiting.rawValue == "WAITING_APPROVAL", "raw truth retained")
+
+        expect(AccessibilityAnnouncementPolicy.announcement(for: .heartbeat(eventID: "h1")) == nil, "heartbeat silent")
+        expect(AccessibilityAnnouncementPolicy.announcement(for: .testCountChanged(eventID: "t1")) == nil, "test count silent")
+        expect(AccessibilityAnnouncementPolicy.announcement(for: .completed(eventID: "c1")) == "Run completed", "completed announces")
+        expect(AccessibilityAnnouncementPolicy.announcement(for: .waitingApproval(eventID: "a1")) == "Approval required", "approval announces")
+        print("ALL CONTRACT CORE TESTS PASS")
+    }
+}

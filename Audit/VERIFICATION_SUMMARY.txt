@@ -1,0 +1,37 @@
+Observer CI + Self-Sign Pipeline V1
+LOCAL VERIFICATION SUMMARY
+
+Verified in current Linux sandbox:
+- Foundation presentation/domain/fixture executable tests: 38/38 PASS
+- Pipeline static lint: 30/30 PASS
+- Swift parser: 12/12 files PASS
+- Shell scripts: bash -n PASS
+- Python scripts: py_compile PASS
+- project.yml: YAML parse PASS
+- GitHub workflow YAML: parse PASS
+- Preview scenario coverage: 18/18 represented by capture script
+
+Material finding repaired during verification:
+- ObserverApp originally called RunDetailSummaryView with a removed second initializer parameter. Parser-only validation could not detect this API-shape mismatch. The call was repaired to RunDetailSummaryView(presentation: detail), and a static lint guard now checks the expected initializer shape.
+
+Not yet verified in this environment:
+- XcodeGen project generation
+- Xcode 26.5 typecheck/link
+- WidgetKit extension compilation/embedding
+- iOS Simulator install/launch
+- 18-state screenshot capture
+- unsigned iphoneos build
+- unsigned IPA packaging from a real Xcode build
+- self-signing with the user's certificate/profile
+- physical-device launch
+- Widget discovery on physical device
+- Live Activity behavior on physical device
+
+Verification tier:
+STATIC_INSPECTION + LINUX_SWIFT_EXECUTION + SCRIPT/YAML_LINT
+
+Independence:
+SINGLE_EXECUTOR / NON-MACOS ENVIRONMENT
+
+Conclusion:
+PARTIAL, READY_FOR_MACOS_CI_TRIAL
