@@ -13,7 +13,7 @@ struct ObserverCoreTests {
         }
     }
 
-    static func main() {
+    static func main() async {
         expect(ObserverPreviewScenario.allCases.count == 18, "preview scenario count = 18")
         expect(Set(ObserverPreviewScenario.allCases.map(\.rawValue)).count == 18, "preview scenarios unique")
 
@@ -60,7 +60,7 @@ struct ObserverCoreTests {
         let completedBase = completedUnknownFixture.snapshot.runs[0]
         let exportedRun = RunStatusSnapshot(
             runID: completedBase.runID,
-            workspaceID: completedBase.workspaceID,
+            projectID: completedBase.projectID,
             projectName: completedBase.projectName,
             executionStatus: .completed,
             runtimeHealth: completedBase.runtimeHealth,
@@ -120,6 +120,99 @@ struct ObserverCoreTests {
             expect(detail.liveConnectionIncident?.state == .online, "online detail exposes live connection")
             expect(detail.liveConnectionIncident?.title == "ONLINE", "online detail labels live connection explicitly")
         } else { expect(false, "run detail projection exists") }
+
+        let base = running.snapshot.runs[0]
+        let reconcilingTruth = DirectorTaskTruth(
+            taskID: base.runID,
+            projectID: base.projectID,
+            state: .reconciling,
+            stateClass: "ACTIVE",
+            stateVersion: .integer(7),
+            terminal: false,
+            settled: false,
+            outcome: .unresolved,
+            recoveryState: .reconciliationRequired,
+            access: .authorized,
+            blockingReason: "Verifying previous effect",
+            cancellable: false,
+            createdAt: base.startedAt,
+            updatedAt: base.updatedAt
+        )
+        let reconcilingRun = RunStatusSnapshot(
+            runID: base.runID,
+            projectID: base.projectID,
+            projectName: base.projectName,
+            executionStatus: .failed,
+            directorTruth: reconcilingTruth,
+            runtimeHealth: base.runtimeHealth,
+            runtimePhase: base.runtimePhase,
+            stage: base.stage,
+            currentOperation: base.currentOperation,
+            elapsedMS: base.elapsedMS,
+            startedAt: base.startedAt,
+            endedAt: nil,
+            heartbeats: base.heartbeats,
+            tests: base.tests,
+            checkpoint: base.checkpoint,
+            bundle: base.bundle,
+            presentationStatus: base.presentationStatus,
+            lastEvent: base.lastEvent,
+            updatedAt: base.updatedAt
+        )
+        let reconcilingStatus = ObserverProjectionBuilder.status(reconcilingRun)
+        expect(reconcilingStatus.primary == "RECONCILING", "director RECONCILING is not flattened to legacy FAILED")
+        expect(reconcilingStatus.rawValue == "RECONCILING|UNRESOLVED", "director raw state and outcome remain visible")
+        expect(FocusRunResolver.activeRuns([reconcilingRun]).count == 1, "reconciling nonterminal task remains current candidate")
+
+        let unknownOutcomeTruth = DirectorTaskTruth(
+            taskID: completedBase.runID,
+            projectID: completedBase.projectID,
+            state: .terminal,
+            stateClass: "TERMINAL",
+            stateVersion: .string("v9"),
+            terminal: true,
+            settled: false,
+            outcome: .outcomeUnknown,
+            recoveryState: .reconciliationRequired,
+            access: .notRequired,
+            blockingReason: "Effect outcome requires reconciliation",
+            cancellable: false,
+            createdAt: completedBase.startedAt,
+            updatedAt: completedBase.updatedAt
+        )
+        let unknownOutcomeRun = RunStatusSnapshot(
+            runID: completedBase.runID,
+            projectID: completedBase.projectID,
+            projectName: completedBase.projectName,
+            executionStatus: .completed,
+            directorTruth: unknownOutcomeTruth,
+            runtimeHealth: completedBase.runtimeHealth,
+            runtimePhase: completedBase.runtimePhase,
+            stage: completedBase.stage,
+            currentOperation: nil,
+            elapsedMS: completedBase.elapsedMS,
+            startedAt: completedBase.startedAt,
+            endedAt: completedBase.endedAt,
+            heartbeats: completedBase.heartbeats,
+            tests: completedBase.tests,
+            checkpoint: completedBase.checkpoint,
+            bundle: completedBase.bundle,
+            presentationStatus: .unknown,
+            lastEvent: completedBase.lastEvent,
+            updatedAt: completedBase.updatedAt
+        )
+        expect(ObserverProjectionBuilder.status(unknownOutcomeRun).primary == "OUTCOME UNKNOWN", "terminal unknown outcome is not flattened to COMPLETED")
+        expect(ObserverProjectionBuilder.completionTruth(unknownOutcomeRun).engineeringComplete == false, "OUTCOME_UNKNOWN is not engineering complete")
+        expect(unknownOutcomeRun.isTerminalObservation, "director terminal flag controls terminal observation")
+        expect(DirectorTaskState(rawValue: "FUTURE_STATE").rawValue == "FUTURE_STATE", "unknown future director state is preserved")
+
+        do {
+            let envelope = try await FixtureObserverDataSource(scenario: .runningActiveOnline).load()
+            expect(envelope.snapshot == running.snapshot, "fixture data source preserves existing preview snapshot")
+            expect(envelope.preferredDetailRunID == running.preferredDetailRunID, "fixture data source preserves preferred detail identity")
+        } catch {
+            expect(false, "fixture data source load succeeds")
+        }
 
         let auth = ObserverFixtureFactory.make(.authFailedCached)
         let authOverview = ObserverProjectionBuilder.makeOverview(auth.snapshot)

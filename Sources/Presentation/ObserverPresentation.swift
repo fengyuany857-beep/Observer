@@ -146,7 +146,7 @@ public struct RunDetailPresentation: Sendable, Equatable {
 
 public enum FocusRunResolver {
     public static func activeRuns(_ runs: [RunStatusSnapshot]) -> [RunStatusSnapshot] {
-        runs.filter { $0.executionStatus.isActivePresentationCandidate }
+        runs.filter { $0.isActivePresentationCandidate }
     }
 }
 
@@ -165,6 +165,63 @@ public enum ObserverProjectionBuilder {
         case .resumable: .init(primary: "RESUMABLE", secondary: nil, rawValue: status.rawValue, symbolName: "arrow.clockwise.circle", tone: .warning)
         case .unknown: .init(primary: "UNKNOWN", secondary: nil, rawValue: status.rawValue, symbolName: "questionmark.circle", tone: .neutral)
         }
+    }
+
+    public static func status(_ run: RunStatusSnapshot) -> StatusPresentation {
+        if let truth = run.directorTruth {
+            return status(truth)
+        }
+        return status(run.executionStatus)
+    }
+
+    public static func status(_ truth: DirectorTaskTruth) -> StatusPresentation {
+        let raw = "\(truth.state.rawValue)|\(truth.outcome.rawValue)"
+
+        if truth.terminal || truth.state == .terminal {
+            if truth.outcome == .succeeded {
+                return .init(primary: "COMPLETED", secondary: nil, rawValue: raw, symbolName: "checkmark.circle", tone: .positive)
+            }
+            if truth.outcome == .failed {
+                return .init(primary: "FAILED", secondary: truth.blockingReason, rawValue: raw, symbolName: "xmark.octagon", tone: .negative)
+            }
+            if truth.outcome == .cancelled {
+                return .init(primary: "ABORTED", secondary: nil, rawValue: raw, symbolName: "stop.circle", tone: .negative)
+            }
+            if truth.outcome == .partial {
+                return .init(primary: "PARTIAL", secondary: truth.blockingReason, rawValue: raw, symbolName: "exclamationmark.circle", tone: .warning)
+            }
+            if truth.outcome == .blocked {
+                return .init(primary: "BLOCKED", secondary: truth.blockingReason, rawValue: raw, symbolName: "lock.circle", tone: .warning)
+            }
+            if truth.outcome == .outcomeUnknown {
+                return .init(primary: "OUTCOME UNKNOWN", secondary: truth.blockingReason, rawValue: raw, symbolName: "questionmark.circle", tone: .warning)
+            }
+            return .init(primary: "TERMINAL", secondary: truth.outcome.rawValue, rawValue: raw, symbolName: "circle", tone: .neutral)
+        }
+
+        if truth.state == .created {
+            return .init(primary: "PENDING", secondary: nil, rawValue: raw, symbolName: "clock", tone: .neutral)
+        }
+        if truth.state == .waiting {
+            return .init(primary: "WAITING", secondary: truth.waitReason, rawValue: raw, symbolName: "pause.circle", tone: .warning)
+        }
+        if truth.state == .running {
+            return .init(primary: "RUNNING", secondary: nil, rawValue: raw, symbolName: "waveform.path.ecg", tone: .positive)
+        }
+        if truth.state == .needsDecision {
+            return .init(primary: "NEEDS DECISION", secondary: truth.blockingReason ?? truth.waitReason, rawValue: raw, symbolName: "questionmark.diamond", tone: .warning)
+        }
+        if truth.state == .paused {
+            return .init(primary: "PAUSED", secondary: truth.waitReason, rawValue: raw, symbolName: "pause.circle", tone: .warning)
+        }
+        if truth.state == .reconciling {
+            return .init(primary: "RECONCILING", secondary: truth.blockingReason, rawValue: raw, symbolName: "arrow.triangle.2.circlepath", tone: .warning)
+        }
+        if truth.state == .cancelling {
+            return .init(primary: "CANCELLING", secondary: nil, rawValue: raw, symbolName: "xmark.circle", tone: .warning)
+        }
+
+        return .init(primary: "UNKNOWN STATE", secondary: truth.state.rawValue, rawValue: raw, symbolName: "questionmark.circle", tone: .neutral)
     }
 
     public static func connectionIncident(_ state: ConnectionState, lastSyncAt: Date, observedAt: Date) -> ConnectionIncidentPresentation? {
@@ -187,7 +244,7 @@ public enum ObserverProjectionBuilder {
 
     public static func completionTruth(_ run: RunStatusSnapshot) -> CompletionTruth {
         .init(
-            engineeringComplete: run.executionStatus == .completed,
+            engineeringComplete: run.directorTruth?.engineeringComplete ?? (run.executionStatus == .completed),
             artifactVerified: run.bundle.status == .verified,
             presentationConfirmed: run.presentationStatus == .confirmedPresented,
             presentationUnknown: run.presentationStatus == .unknown
@@ -207,7 +264,7 @@ public enum ObserverProjectionBuilder {
         return .init(
             runID: run.runID,
             projectName: run.projectName,
-            status: status(run.executionStatus),
+            status: status(run),
             health: run.runtimeHealth,
             stageText: stage,
             updatedAt: run.updatedAt,
@@ -248,18 +305,34 @@ public enum ObserverProjectionBuilder {
         snapshot.runs.sorted { $0.updatedAt > $1.updatedAt }.map { run in
             let secondary = [run.stage.map { "\($0.name) \($0.index)/\($0.total)" }, "UPDATED \(timeOnly(run.updatedAt))"].compactMap { $0 }.joined(separator: " · ")
             let abnormal: RuntimeHealth? = run.runtimeHealth == .active ? nil : run.runtimeHealth
-            return .init(id: run.runID, projectName: run.projectName, status: status(run.executionStatus), secondaryLine: secondary, abnormalHealth: abnormal, updatedAt: run.updatedAt, isCached: snapshot.provenance == .cached)
+            return .init(id: run.runID, projectName: run.projectName, status: status(run), secondaryLine: secondary, abnormalHealth: abnormal, updatedAt: run.updatedAt, isCached: snapshot.provenance == .cached)
         }
     }
 
     public static func makeRunDetail(_ snapshot: ObserverSnapshot, runID: String) -> RunDetailPresentation? {
         guard let run = snapshot.runs.first(where: { $0.runID == runID }) else { return nil }
-        let truth: [TruthRowPresentation] = [
-            .init(id: "execution", key: "EXECUTION", value: run.executionStatus.rawValue, tone: run.executionStatus == .failed ? .negative : .neutral),
-            .init(id: "health", key: run.executionStatus.isTerminal ? "FINAL HEALTH" : "HEALTH", value: run.runtimeHealth.rawValue, tone: run.runtimeHealth == .suspectedStuck ? .warning : .neutral),
-            .init(id: "artifact", key: "ARTIFACT", value: run.bundle.status.rawValue, tone: run.bundle.status == .verified ? .positive : (run.bundle.status == .failed ? .negative : .neutral)),
-            .init(id: "presentation", key: "PRESENTATION", value: run.presentationStatus.rawValue, tone: .neutral)
-        ]
+        let truth: [TruthRowPresentation] = {
+            if let director = run.directorTruth {
+                var rows: [TruthRowPresentation] = [
+                    .init(id: "task-state", key: "TASK STATE", value: director.state.rawValue, tone: .neutral),
+                    .init(id: "outcome", key: "OUTCOME", value: director.outcome.rawValue, tone: outcomeTone(director.outcome)),
+                    .init(id: "recovery", key: "RECOVERY", value: director.recoveryState.rawValue, tone: director.recoveryState == .clean ? .neutral : .warning)
+                ]
+                if let access = director.access {
+                    rows.append(.init(id: "access", key: "ACCESS", value: access.rawValue, tone: access == .denied || access == .expired ? .warning : .neutral))
+                }
+                rows.append(.init(id: "health", key: run.isTerminalObservation ? "FINAL HEALTH" : "HEALTH", value: run.runtimeHealth.rawValue, tone: run.runtimeHealth == .suspectedStuck ? .warning : .neutral))
+                rows.append(.init(id: "artifact", key: "ARTIFACT", value: run.bundle.status.rawValue, tone: run.bundle.status == .verified ? .positive : (run.bundle.status == .failed ? .negative : .neutral)))
+                rows.append(.init(id: "presentation", key: "PRESENTATION", value: run.presentationStatus.rawValue, tone: .neutral))
+                return rows
+            }
+            return [
+                .init(id: "execution", key: "EXECUTION", value: run.executionStatus.rawValue, tone: run.executionStatus == .failed ? .negative : .neutral),
+                .init(id: "health", key: run.executionStatus.isTerminal ? "FINAL HEALTH" : "HEALTH", value: run.runtimeHealth.rawValue, tone: run.runtimeHealth == .suspectedStuck ? .warning : .neutral),
+                .init(id: "artifact", key: "ARTIFACT", value: run.bundle.status.rawValue, tone: run.bundle.status == .verified ? .positive : (run.bundle.status == .failed ? .negative : .neutral)),
+                .init(id: "presentation", key: "PRESENTATION", value: run.presentationStatus.rawValue, tone: .neutral)
+            ]
+        }()
         let current = run.currentOperation.map { CurrentOperationPresentation(kind: $0.kind, name: $0.name, startedAt: $0.startedAt) }
         let stage = run.stage.map { "\($0.name) · \($0.index)/\($0.total)" }
         let lastEvent = run.lastEvent.map { "EPOCH \($0.epoch) · SEQ \($0.seq) · \($0.type)" }
@@ -267,7 +340,7 @@ public enum ObserverProjectionBuilder {
             runID: run.runID,
             projectName: run.projectName,
             liveConnectionIncident: liveConnection(snapshot.connectionState, lastSyncAt: snapshot.lastSyncAt, observedAt: snapshot.observedAt),
-            hero: status(run.executionStatus),
+            hero: status(run),
             completionTruth: completionTruth(run),
             currentOperation: current,
             truthRows: truth,
@@ -280,6 +353,13 @@ public enum ObserverProjectionBuilder {
             startedAt: run.startedAt,
             endedAt: run.endedAt
         )
+    }
+
+    private static func outcomeTone(_ outcome: DirectorTaskOutcome) -> SemanticTone {
+        if outcome == .failed || outcome == .cancelled { return .negative }
+        if outcome == .partial || outcome == .blocked || outcome == .outcomeUnknown { return .warning }
+        if outcome == .succeeded { return .positive }
+        return .neutral
     }
 
     private static func shortID(_ value: String) -> String { String(value.suffix(6)).uppercased() }

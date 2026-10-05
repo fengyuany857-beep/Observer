@@ -30,6 +30,19 @@ public struct ObserverFixture: Sendable {
     public let preferredDetailRunID: String?
 }
 
+public struct FixtureObserverDataSource: ObserverDataSource {
+    public let scenario: ObserverPreviewScenario
+
+    public init(scenario: ObserverPreviewScenario) {
+        self.scenario = scenario
+    }
+
+    public func load() async throws -> ObserverDataEnvelope {
+        let fixture = ObserverFixtureFactory.make(scenario)
+        return .init(snapshot: fixture.snapshot, preferredDetailRunID: fixture.preferredDetailRunID)
+    }
+}
+
 public enum ObserverFixtureFactory {
     public static let now = Date(timeIntervalSince1970: 1_791_151_200) // deterministic 2026 fixture clock
 
@@ -130,7 +143,7 @@ public enum ObserverFixtureFactory {
         let operation: OperationSnapshot? = isLive ? .init(kind: "TOOL", name: operationName(execution), startedAt: now.addingTimeInterval(-37)) : nil
         return .init(
             runID: id,
-            workspaceID: "workspace-default",
+            projectID: "project-fixture-default",
             projectName: project,
             executionStatus: execution,
             runtimeHealth: health,
