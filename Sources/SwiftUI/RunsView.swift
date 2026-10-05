@@ -3,7 +3,6 @@ import SwiftUI
 public enum ObserverRunScope: String, CaseIterable, Identifiable {
     case all = "ALL"
     case active = "ACTIVE"
-    case completed = "COMPLETED"
     case attention = "ATTENTION"
     public var id: String { rawValue }
 }
