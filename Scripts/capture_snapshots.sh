@@ -16,6 +16,44 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 xcrun simctl install "$UDID" "$APP_PATH"
+DATA_CONTAINER="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)"
+mkdir -p "$DATA_CONTAINER/Documents"
+
+capture_surface() {
+  local scenario="$1"
+  local surface="$2"
+  local output="$3"
+  local ready="$DATA_CONTAINER/Documents/observer-snapshot-ready-${scenario}-${surface}"
+
+  rm -f "$ready"
+  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+  xcrun simctl launch "$UDID" "$BUNDLE_ID"     --scenario "$scenario"     --surface "$surface"     --snapshot-ci-ready >/dev/null
+
+  local attempt
+  for attempt in $(seq 1 60); do
+    if [[ -f "$ready" ]]; then
+      break
+    fi
+    sleep 0.2
+  done
+
+  if [[ ! -f "$ready" ]]; then
+    echo "Snapshot readiness timeout: scenario=$scenario surface=$surface" >&2
+    exit 1
+  fi
+
+  sleep 0.35
+  xcrun simctl io "$UDID" screenshot "$output"
+  test -s "$output"
+
+  local width height
+  width="$(sips -g pixelWidth "$output" | awk '/pixelWidth/ {print $2}')"
+  height="$(sips -g pixelHeight "$output" | awk '/pixelHeight/ {print $2}')"
+  if [[ -z "$width" || -z "$height" || "$width" -lt 500 || "$height" -lt 1000 ]]; then
+    echo "Invalid screenshot dimensions: $output width=$width height=$height" >&2
+    exit 1
+  fi
+}
 
 scenarios=(
   runningActiveOnline
@@ -39,19 +77,18 @@ scenarios=(
 )
 
 for s in "${scenarios[@]}"; do
-  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID" --scenario "$s" --surface overview >/dev/null
-  sleep 1
-  xcrun simctl io "$UDID" screenshot "Artifacts/Snapshots/Overview/${s}.png"
+  capture_surface "$s" "overview" "Artifacts/Snapshots/Overview/${s}.png"
 done
 
 for surface in runs detail settings; do
-  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID" --scenario runningActiveOnline --surface "$surface" >/dev/null
-  sleep 1
-  xcrun simctl io "$UDID" screenshot "Artifacts/Snapshots/Core3/${surface}.png"
+  capture_surface "runningActiveOnline" "$surface" "Artifacts/Snapshots/Core3/${surface}.png"
 done
 
 xcrun simctl status_bar "$UDID" clear || true
 find Artifacts/Snapshots -type f -name '*.png' | sort > Artifacts/Snapshot-Manifest.txt
-printf 'SNAPSHOT_COUNT=%s\n' "$(find Artifacts/Snapshots -type f -name '*.png' | wc -l | tr -d ' ')" >> Artifacts/Snapshot-Manifest.txt
+COUNT="$(find Artifacts/Snapshots -type f -name '*.png' | wc -l | tr -d ' ')"
+printf 'SNAPSHOT_COUNT=%s\n' "$COUNT" >> Artifacts/Snapshot-Manifest.txt
+if [[ "$COUNT" -ne 21 ]]; then
+  echo "Expected 21 snapshots, found $COUNT" >&2
+  exit 1
+fi
