@@ -22,22 +22,27 @@ public struct RunsView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ObserverPageIdentity("RUNS", subtitle: "ARCHIVE INDEX")
-                    .padding(.bottom, ObserverSpacing.x6)
+                ObserverPageIdentity("RUNS", subtitle: scope.rawValue)
+                    .padding(.bottom, ObserverSpacing.x8)
+
                 if let incident { ConnectionIncidentBar(incident) }
                 if let cachedNotice { CachedSnapshotNotice(cachedNotice) }
+
                 if filteredRows.isEmpty {
                     VStack(alignment: .leading, spacing: ObserverSpacing.x3) {
                         ObserverDisplayText("NO MATCH")
-                        Text("No run matches the current search and scope.").foregroundStyle(.secondary)
+                        Text("No run matches the current search and scope.")
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, ObserverSpacing.x10)
                 } else {
                     ForEach(filteredRows) { row in
                         Group {
                             if let detail = details[row.id] {
-                                NavigationLink { RunDetailSummaryView(presentation: detail) } label: { RunArchiveRow(row) }
-                                    .buttonStyle(.plain)
+                                NavigationLink { RunDetailSummaryView(presentation: detail) } label: {
+                                    RunArchiveRow(row)
+                                }
+                                .buttonStyle(.plain)
                             } else {
                                 RunArchiveRow(row)
                             }
@@ -50,7 +55,9 @@ public struct RunsView: View {
             .padding(.top, ObserverSpacing.x4)
             .padding(.bottom, ObserverSpacing.x18)
         }
-        .searchable(text: $query, prompt: "Project or status")
+        .searchable(text: $query, prompt: "Search runs")
+        .observerSearchToolbarMinimizeIfAvailable()
+        .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -60,25 +67,31 @@ public struct RunsView: View {
                         }
                     }
                 } label: {
-                    Label(scope.rawValue, systemImage: "line.3.horizontal.decrease.circle")
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.callout.weight(.medium))
                 }
                 .accessibilityLabel("Run scope")
                 .accessibilityValue(scope.rawValue)
             }
         }
-        .navigationTitle("Runs")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var filteredRows: [RunRowPresentation] {
         rows.filter { row in
-            let queryMatch = query.isEmpty || row.projectName.localizedCaseInsensitiveContains(query) || row.status.rawValue.localizedCaseInsensitiveContains(query)
+            let queryMatch = query.isEmpty
+                || row.projectName.localizedCaseInsensitiveContains(query)
+                || row.status.rawValue.localizedCaseInsensitiveContains(query)
+
             let scopeMatch: Bool = {
                 switch scope {
-                case .all: true
-                case .active: ["PENDING","STARTING","RUNNING","WAITING_APPROVAL","VERIFYING","FINALIZING"].contains(row.status.rawValue)
-
-                case .attention: row.abnormalHealth != nil || ["FAILED","WAITING_APPROVAL","RESUMABLE"].contains(row.status.rawValue)
+                case .all:
+                    true
+                case .active:
+                    ["PENDING","STARTING","RUNNING","WAITING_APPROVAL","VERIFYING","FINALIZING"].contains(row.status.rawValue)
+                case .attention:
+                    row.abnormalHealth != nil || ["FAILED","WAITING_APPROVAL","RESUMABLE"].contains(row.status.rawValue)
                 }
             }()
             return queryMatch && scopeMatch
