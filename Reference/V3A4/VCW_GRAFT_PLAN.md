@@ -2,6 +2,8 @@
 
 State: CANDIDATE_ONLY / NOT_DEPLOYED
 
+Sandbox regression: 24/24 PASS.
+
 ## Target
 Current VCW V2 Gateway / schema 3 / Phase7 effect kernel, using the exact Production-bound identities observed during V3-A3.
 
