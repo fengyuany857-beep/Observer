@@ -157,17 +157,21 @@ public struct StageProgressRule: View {
 
 public struct HealthFreshnessBlock: View {
     let value: HealthFreshnessPresentation
-    public init(_ value: HealthFreshnessPresentation) { self.value = value }
+    let terminal: Bool
+    public init(_ value: HealthFreshnessPresentation, terminal: Bool = false) {
+        self.value = value
+        self.terminal = terminal
+    }
     public var body: some View {
         HStack(alignment: .top, spacing: ObserverSpacing.x6) {
             VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
-                ObserverMetadataKey("HEALTH")
+                ObserverMetadataKey(terminal ? "FINAL HEALTH" : "HEALTH")
                 Label(value.health.rawValue, systemImage: "circle.fill")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(ObserverPalette.healthColor(value.health))
             }
             VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
-                ObserverMetadataKey("UPDATED")
+                ObserverMetadataKey(terminal ? "FINAL OBSERVED" : "UPDATED")
                 Text(value.updatedAt, style: .time).font(.callout).monospacedDigit()
             }
             Spacer(minLength: 0)
