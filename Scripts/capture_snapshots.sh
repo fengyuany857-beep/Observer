@@ -25,24 +25,44 @@ capture_surface() {
   local output="$3"
   local ready="$DATA_CONTAINER/Documents/observer-snapshot-ready-${scenario}-${surface}"
 
-  rm -f "$ready"
-  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID"     --scenario "$scenario"     --surface "$surface"     --snapshot-ci-ready >/dev/null
+  local launch_attempt ready_attempt
+  local ready_ok=0
 
-  local attempt
-  for attempt in $(seq 1 60); do
-    if [[ -f "$ready" ]]; then
+  for launch_attempt in 1 2 3; do
+    echo "Capture scenario=$scenario surface=$surface attempt=$launch_attempt"
+    rm -f "$ready"
+    xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+    sleep 0.4
+
+    if ! xcrun simctl launch "$UDID" "$BUNDLE_ID" --scenario "$scenario" --surface "$surface" --snapshot-ci-ready; then
+      echo "Launch failed: scenario=$scenario surface=$surface attempt=$launch_attempt" >&2
+      sleep 1
+      continue
+    fi
+
+    for ready_attempt in $(seq 1 75); do
+      if [[ -f "$ready" ]]; then
+        ready_ok=1
+        break
+      fi
+      sleep 0.2
+    done
+
+    if [[ "$ready_ok" -eq 1 ]]; then
       break
     fi
-    sleep 0.2
+
+    echo "Readiness timeout: scenario=$scenario surface=$surface attempt=$launch_attempt" >&2
+    xcrun simctl spawn "$UDID" log show --style compact --last 30s --predicate 'process == "Observer"' 2>/dev/null | tail -n 80 || true
+    sleep 1
   done
 
-  if [[ ! -f "$ready" ]]; then
-    echo "Snapshot readiness timeout: scenario=$scenario surface=$surface" >&2
+  if [[ "$ready_ok" -ne 1 ]]; then
+    echo "Snapshot readiness failed after 3 attempts: scenario=$scenario surface=$surface" >&2
     exit 1
   fi
 
-  sleep 0.35
+  sleep 0.6
   xcrun simctl io "$UDID" screenshot "$output"
   test -s "$output"
 
