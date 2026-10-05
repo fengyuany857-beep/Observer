@@ -22,8 +22,35 @@ public struct RunsView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ObserverPageIdentity("RUNS", subtitle: scope.rawValue)
-                    .padding(.bottom, ObserverSpacing.x8)
+                ObserverPageIdentity("RUNS", subtitle: "ARCHIVE INDEX")
+                    .padding(.bottom, ObserverSpacing.x4)
+
+                HStack(alignment: .firstTextBaseline) {
+                    ObserverMetadataKey("SCOPE")
+                    Spacer()
+
+                    Menu {
+                        Picker("Scope", selection: $scope) {
+                            ForEach(ObserverRunScope.allCases) { item in
+                                Text(item.rawValue).tag(item)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: ObserverSpacing.x1) {
+                            Text(scope.rawValue)
+                                .font(.caption.weight(.medium))
+                                .tracking(0.45)
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.semibold))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Run scope")
+                    .accessibilityValue(scope.rawValue)
+                }
+                .padding(.bottom, ObserverSpacing.x4)
+                .overlay(alignment: .bottom) { Divider() }
 
                 if let incident { ConnectionIncidentBar(incident) }
                 if let cachedNotice { CachedSnapshotNotice(cachedNotice) }
@@ -58,22 +85,6 @@ public struct RunsView: View {
         .searchable(text: $query, prompt: "Search runs")
         .observerSearchToolbarMinimizeIfAvailable()
         .scrollDismissesKeyboard(.interactively)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Scope", selection: $scope) {
-                        ForEach(ObserverRunScope.allCases) { item in
-                            Text(item.rawValue).tag(item)
-                        }
-                    }
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease")
-                        .font(.callout.weight(.medium))
-                }
-                .accessibilityLabel("Run scope")
-                .accessibilityValue(scope.rawValue)
-            }
-        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
