@@ -23,6 +23,11 @@ jobs:
       - name: Run V3-A4 contract regression
         working-directory: Reference/V3A4
         run: python3 -m unittest -v test_observer_read_projection.py
+      - name: Compile Swift DTO contract
+        run: |
+          swiftc Reference/V3A4/VCWObserverProjectionDTO.swift Reference/V3A4/test_vcw_observer_projection_dto.swift -o /tmp/v3a4-dto-test
+          /tmp/v3a4-dto-test
+
       - name: Validate contract document
         run: |
           python3 - <<'PY'
