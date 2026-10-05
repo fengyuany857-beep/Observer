@@ -20,7 +20,7 @@ public struct ObserverRuntimeSettings: Sendable, Equatable {
 }
 
 public struct ObserverRuntimeConfigurationStore {
-    public static let defaultBaseURLString = "https://vcw-observer.tail40ed70.ts.net:8443"
+    public static let defaultBaseURLString = "https://vcw-observer-read-edge.vercel.app"
     public static let defaultProjectID = "vcw-acceptance"
 
     private static let baseURLKey = "observer.runtime.base-url"
