@@ -1,4 +1,5 @@
 .github/workflows/observer-ci.yml
+.github/workflows/v3a4-contract.yml
 App/ObserverApp.swift
 Artifacts/LOCAL-Core-Test-Report.txt
 Artifacts/LOCAL-Pipeline-Lint.txt
@@ -13,6 +14,10 @@ Reference/Observer_Core3_UI_Skeleton_V1_WALLHACK_Audited.txt
 Reference/Observer_DesignSystem_SwiftUI_Contract_V1_WALLHACK_Audited.txt
 Reference/Observer_Motion_Animated_Icon_System_V1_WALLHACK_Audited.txt
 Reference/Observer_V3A1_Real_Data_Contract_v1.json
+Reference/V3A4/Observer_V3A4_Read_Projection_Contract_v1.json
+Reference/V3A4/VCW_GRAFT_PLAN.md
+Reference/V3A4/observer_read_projection.py
+Reference/V3A4/test_observer_read_projection.py
 Reference/contract_model_v1.json
 Scripts/bootstrap_xcodegen.sh
 Scripts/build_simulator.sh
