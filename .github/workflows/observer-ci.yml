@@ -1,10 +1,9 @@
 name: Observer CI + Self-Sign
-# A5.3 candidate CI trigger
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main, observer-v3-a5-3-candidate-20261006 ]
+    branches: [ main ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
