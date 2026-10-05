@@ -20,29 +20,84 @@ public struct ObserverStatusHero: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let presentation: StatusPresentation
     public init(_ presentation: StatusPresentation) { self.presentation = presentation }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: ObserverSpacing.x3) {
-            HStack(spacing: ObserverSpacing.x2) {
+            HStack(alignment: .center, spacing: ObserverSpacing.x2) {
+                ObserverMetadataKey("EXECUTION")
+                Spacer(minLength: ObserverSpacing.x3)
                 Image(systemName: presentation.symbolName)
-                    .font(.title3.weight(.medium))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(ObserverPalette.color(for: presentation.tone))
                     .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
                 Text(presentation.rawValue)
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.6)
+                    .font(.caption2.weight(.medium))
+                    .tracking(0.45)
                     .foregroundStyle(.secondary)
             }
+
             ObserverDisplayText(presentation.primary)
                 .contentTransition(.opacity)
+
             if let secondary = presentation.secondary {
-                Text(secondary)
-                    .font(.headline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                ObserverFunctionalSignal(secondary, tone: presentation.tone)
             }
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: presentation.rawValue)
         .accessibilityElement(children: .combine)
         .accessibilityLabel([presentation.primary, presentation.secondary].compactMap { $0 }.joined(separator: ", "))
+    }
+}
+
+public struct ObserverFunctionalSignal: View {
+    let title: String
+    let tone: SemanticTone
+
+    public init(_ title: String, tone: SemanticTone) {
+        self.title = title
+        self.tone = tone
+    }
+
+    public var body: some View {
+        HStack(spacing: ObserverSpacing.x3) {
+            Rectangle()
+                .fill(ObserverPalette.color(for: tone))
+                .frame(width: 2, height: 24)
+            Text(title.uppercased())
+                .font(.caption.weight(.semibold))
+                .tracking(0.55)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, ObserverSpacing.x2)
+        .overlay(alignment: .top) { Divider() }
+        .overlay(alignment: .bottom) { Divider() }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+public struct RuntimeHealthAttentionNode: View {
+    let health: RuntimeHealth
+
+    public init(_ health: RuntimeHealth) {
+        self.health = health
+    }
+
+    public var body: some View {
+        HStack(spacing: ObserverSpacing.x3) {
+            Rectangle()
+                .fill(ObserverPalette.healthColor(health))
+                .frame(width: 2, height: 30)
+            VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
+                ObserverMetadataKey("RUNTIME HEALTH")
+                Text(health.rawValue)
+                    .font(.headline.weight(.medium))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, ObserverSpacing.x2)
+        .overlay(alignment: .top) { Divider() }
+        .overlay(alignment: .bottom) { Divider() }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -105,19 +160,84 @@ public struct DenseMetadataNode: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let fields: [MetadataFieldPresentation]
     public init(_ fields: [MetadataFieldPresentation]) { self.fields = fields }
+
     public var body: some View {
         let layout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: ObserverSpacing.x3))
             : AnyLayout(HStackLayout(alignment: .top, spacing: ObserverSpacing.x6))
+
         layout {
             ForEach(fields.prefix(6)) { field in
                 VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
                     ObserverMetadataKey(field.key)
-                    Text(field.value).font(.callout).monospacedDigit()
+                    Text(field.value)
+                        .font(.callout)
+                        .monospacedDigit()
                 }
             }
         }
-        .padding(.vertical, ObserverSpacing.x3)
+        .padding(.vertical, ObserverSpacing.x2)
+    }
+}
+
+public struct ObserverInstrumentNode: View {
+    let fields: [MetadataFieldPresentation]
+    let healthFreshness: HealthFreshnessPresentation
+    let terminal: Bool
+    let startedAt: Date
+    let endedAt: Date?
+    let tests: TestsPresentation
+    let checkpoint: CheckpointPresentation?
+
+    public init(
+        fields: [MetadataFieldPresentation],
+        healthFreshness: HealthFreshnessPresentation,
+        terminal: Bool,
+        startedAt: Date,
+        endedAt: Date?,
+        tests: TestsPresentation,
+        checkpoint: CheckpointPresentation?
+    ) {
+        self.fields = fields
+        self.healthFreshness = healthFreshness
+        self.terminal = terminal
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.tests = tests
+        self.checkpoint = checkpoint
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: ObserverSpacing.x4) {
+            HStack(alignment: .firstTextBaseline) {
+                ObserverMetadataKey("RUN INSTRUMENTS")
+                Spacer()
+                ObserverMetadataKey(terminal ? "FINAL SNAPSHOT" : "LIVE SNAPSHOT")
+            }
+
+            DenseMetadataNode(fields)
+
+            Divider()
+
+            HStack(alignment: .bottom, spacing: ObserverSpacing.x4) {
+                HealthFreshnessBlock(healthFreshness, terminal: terminal)
+                Spacer(minLength: ObserverSpacing.x3)
+                VStack(alignment: .trailing, spacing: ObserverSpacing.x1) {
+                    ObserverMetadataKey("ELAPSED")
+                    LocalElapsedClock(startedAt: startedAt, endedAt: endedAt)
+                }
+            }
+
+            Divider()
+
+            TestProgressRow(tests)
+
+            if let checkpoint {
+                Divider()
+                CheckpointRow(checkpoint)
+            }
+        }
+        .padding(.vertical, ObserverSpacing.x4)
         .overlay(alignment: .top) { Divider() }
         .overlay(alignment: .bottom) { Divider() }
     }
