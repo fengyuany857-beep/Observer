@@ -3,22 +3,37 @@ import SwiftUI
 
 @main
 struct ObserverApp: App {
-    private let scenario: ObserverPreviewScenario
+    private let previewScenario: ObserverPreviewScenario?
     private let surface: ObserverLaunchSurface
 
     init() {
         let args = ProcessInfo.processInfo.arguments
-        self.scenario = Self.value(after: "--scenario", in: args)
-            .flatMap(ObserverPreviewScenario.init(rawValue:)) ?? .runningActiveOnline
+        if args.contains("--scenario") {
+            self.previewScenario = Self.value(after: "--scenario", in: args)
+                .flatMap(ObserverPreviewScenario.init(rawValue:)) ?? .runningActiveOnline
+        } else {
+            self.previewScenario = nil
+        }
         self.surface = Self.value(after: "--surface", in: args)
             .flatMap(ObserverLaunchSurface.init(rawValue:)) ?? .overview
     }
 
     var body: some Scene {
         WindowGroup {
-            ObserverLaunchRoot(scenario: scenario, surface: surface)
-                .preferredColorScheme(.dark)
-                .modifier(SnapshotReadinessReporter(scenario: scenario, surface: surface))
+            Group {
+                if let previewScenario {
+                    ObserverLaunchRoot(scenario: previewScenario, surface: surface)
+                        .modifier(
+                            SnapshotReadinessReporter(
+                                scenario: previewScenario,
+                                surface: surface
+                            )
+                        )
+                } else {
+                    ObserverLiveRoot()
+                }
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
