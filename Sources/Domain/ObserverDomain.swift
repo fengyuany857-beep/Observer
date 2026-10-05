@@ -193,6 +193,7 @@ public enum RuntimeHealth: String, CaseIterable, Sendable, Codable {
 }
 
 public enum RuntimePhase: String, CaseIterable, Sendable, Codable {
+    case unknown = "UNKNOWN"
     case normal = "NORMAL"
     case checkpointDue = "CHECKPOINT_DUE"
     case cautious = "CAUTIOUS"
@@ -212,6 +213,7 @@ public enum ConnectionState: String, CaseIterable, Sendable, Codable {
 }
 
 public enum ArtifactStatus: String, CaseIterable, Sendable, Codable {
+    case unknown = "UNKNOWN"
     case notStarted = "NOT_STARTED"
     case creating = "CREATING"
     case created = "CREATED"
