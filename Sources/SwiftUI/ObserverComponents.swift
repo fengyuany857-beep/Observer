@@ -89,7 +89,7 @@ public struct RuntimeHealthAttentionNode: View {
                 .frame(width: 2, height: 30)
             VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
                 ObserverMetadataKey("RUNTIME HEALTH")
-                Text(health.rawValue)
+                Text(health.rawValue.split(separator: "_").joined(separator: " "))
                     .font(.headline.weight(.medium))
             }
             Spacer(minLength: 0)
@@ -286,8 +286,8 @@ public struct HealthFreshnessBlock: View {
         HStack(alignment: .top, spacing: ObserverSpacing.x6) {
             VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
                 ObserverMetadataKey(terminal ? "FINAL HEALTH" : "HEALTH")
-                Label(value.health.rawValue, systemImage: "circle.fill")
-                    .font(.callout.weight(.medium))
+                Label(value.health.rawValue.split(separator: "_").joined(separator: " "), systemImage: "circle.fill")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(ObserverPalette.healthColor(value.health))
             }
             VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
@@ -382,7 +382,7 @@ public struct RunArchiveRow: View {
                 }
                 Text(row.secondaryLine).font(.caption).foregroundStyle(.secondary)
                 if let health = row.abnormalHealth {
-                    Text(health.rawValue).font(.caption2.weight(.semibold)).foregroundStyle(ObserverPalette.healthColor(health))
+                    Text(health.rawValue.split(separator: "_").joined(separator: " ")).font(.caption2.weight(.semibold)).foregroundStyle(ObserverPalette.healthColor(health))
                 }
             }
         }
