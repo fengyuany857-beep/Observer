@@ -1,0 +1,79 @@
+name: Observer CI + Self-Sign
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'App/**'
+      - 'WidgetExtension/**'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Scripts/**'
+      - 'project.yml'
+      - '.github/workflows/observer-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-snapshot-package:
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Select Xcode 26.5
+        run: Scripts/select_xcode.sh
+
+      - name: Install XcodeGen and generate project
+        run: Scripts/bootstrap_xcodegen.sh
+
+      - name: Run Foundation-only core tests
+        run: Scripts/run_core_tests.sh
+
+      - name: Select simulator
+        id: sim
+        shell: bash
+        run: echo "udid=$(python3 Scripts/find_simulator.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Build simulator app
+        run: Scripts/build_simulator.sh '${{ steps.sim.outputs.udid }}'
+
+      - name: Capture 18 scenarios + Core 3 surfaces
+        run: Scripts/capture_snapshots.sh '${{ steps.sim.outputs.udid }}'
+
+      - name: Build unsigned device IPA
+        run: Scripts/build_unsigned_ipa.sh
+
+      - name: Package reports
+        run: Scripts/package_artifacts.sh
+
+      - name: Upload simulator snapshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: Observer-Simulator-Snapshots
+          path: Artifacts/Observer-Simulator-Snapshots.zip
+          if-no-files-found: error
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: Observer-Unsigned-IPA
+          path: Artifacts/Observer-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload signing and test reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: Observer-CI-Reports
+          path: |
+            Artifacts/Observer-Signing-Report.json
+            Artifacts/Observer-Signing-Report.txt
+            Artifacts/Observer-Core-Test-Report.txt
+            Artifacts/Observer-Build-Manifest.txt
+            Artifacts/Observer-Simulator-Build.log
+            Artifacts/Observer-Device-Unsigned-Build.log
+            Artifacts/Snapshot-Manifest.txt
+          if-no-files-found: error
