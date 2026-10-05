@@ -1,0 +1,414 @@
+{
+  "contract_id": "observer.read.v1",
+  "contract_revision": "V3-A1-2026-10-05",
+  "status": "CLIENT_CONTRACT_FROZEN_BACKEND_BINDING_PARTIAL",
+  "scope": "Observer iOS read-only real-data projection. Command plane excluded.",
+  "baseline": {
+    "observer_commit": "df6b482a90dd555d01d39ca50c4f51f7448cea73",
+    "vcw_live": {
+      "gateway_mode": "V2",
+      "store_schema_version": 3,
+      "journal_mode": "wal",
+      "quick_check": "ok",
+      "runner": "ONLINE"
+    },
+    "vcw_deep_source": "UNAVAILABLE_CURRENT_SESSION",
+    "director_public": "director.public.v1/v1.1 prior project baseline"
+  },
+  "authority": {
+    "task": "EXECUTION_DIRECTOR",
+    "access_session_queue_lock": "GATEWAY",
+    "action_result_cas_sha_job_reconcile": "RUNNER",
+    "rules": [
+      "EVENT_IS_NOT_TRUTH",
+      "OBSERVER_IS_PROJECTION_ONLY",
+      "TASK_SESSION_EXECUTION_AND_RUNNER_JOB_MUST_REMAIN_SEPARATE",
+      "OFFLINE_IS_NOT_FAILED",
+      "STALE_IS_NOT_FAILED",
+      "SUSPECTED_STUCK_IS_NOT_DEAD",
+      "COMPLETED_IS_NOT_PRESENTED",
+      "MISSING_IS_UNKNOWN_OR_OMITTED_NOT_NORMAL"
+    ]
+  },
+  "director_public_state": {
+    "fields": [
+      "contract_version",
+      "task_id",
+      "project_id",
+      "state",
+      "state_class",
+      "state_version",
+      "terminal",
+      "settled",
+      "outcome",
+      "recovery_state",
+      "wait_reason?",
+      "blocking_reason?",
+      "access?",
+      "summary?",
+      "activity?",
+      "progress?",
+      "decision?",
+      "resume?",
+      "cancellable",
+      "result?",
+      "evidence_bundle?",
+      "poll_after_ms?",
+      "created_at",
+      "updated_at"
+    ],
+    "state": [
+      "CREATED",
+      "WAITING",
+      "RUNNING",
+      "NEEDS_DECISION",
+      "PAUSED",
+      "RECONCILING",
+      "CANCELLING",
+      "TERMINAL"
+    ],
+    "outcome": [
+      "UNRESOLVED",
+      "SUCCEEDED",
+      "PARTIAL",
+      "FAILED",
+      "OUTCOME_UNKNOWN",
+      "BLOCKED",
+      "CANCELLED"
+    ],
+    "recovery": [
+      "CLEAN",
+      "DIRTY_KNOWN",
+      "RECONCILIATION_REQUIRED",
+      "RECOVERY_REQUIRED",
+      "RECOVERY_BLOCKED"
+    ],
+    "access": [
+      "PENDING",
+      "AUTHORIZED",
+      "DENIED",
+      "EXPIRED",
+      "NOT_REQUIRED",
+      "UNKNOWN"
+    ]
+  },
+  "identity": {
+    "observer_run_semantics": "PUBLIC_TASK_PROJECTION",
+    "run_id_source": "task_id",
+    "guard": "Never use execution_id, session_id, action/effect_id or runner job_id as runID.",
+    "current_workspaceID": "SEMANTIC_MISMATCH",
+    "replacement": "projectID <- PublicTaskState.project_id"
+  },
+  "snapshot": {
+    "contract_version": "observer.snapshot.v1",
+    "fields": {
+      "snapshot_revision": "projection revision",
+      "connection_state": "Observer transport + Gateway access; separate from task truth",
+      "focus_task_id": "OPTIONAL_UNBOUND; only when explicit authoritative source exists",
+      "tasks": "observer.task.v1[]",
+      "observed_at": "projection observation time",
+      "last_sync_at": "last successful authoritative snapshot receipt",
+      "provenance": "LIVE|CACHED"
+    }
+  },
+  "task": {
+    "contract_version": "observer.task.v1",
+    "required": {
+      "task_id": "PublicTaskState.task_id",
+      "project_id": "PublicTaskState.project_id",
+      "state": "PublicTaskState.state",
+      "state_version": "PublicTaskState.state_version",
+      "terminal": "PublicTaskState.terminal",
+      "settled": "PublicTaskState.settled",
+      "outcome": "PublicTaskState.outcome",
+      "recovery_state": "PublicTaskState.recovery_state",
+      "cancellable": "PublicTaskState.cancellable",
+      "created_at": "PublicTaskState.created_at",
+      "updated_at": "PublicTaskState.updated_at"
+    },
+    "optional": {
+      "state_class": "PublicTaskState.state_class",
+      "access": "PublicTaskState.access",
+      "wait_reason": "PublicTaskState.wait_reason",
+      "blocking_reason": "PublicTaskState.blocking_reason",
+      "summary": "PublicTaskState.summary",
+      "activity": "PublicTaskState.activity",
+      "progress": "PublicTaskState.progress",
+      "decision": "PublicTaskState.decision (READ ONLY)",
+      "resume": "PublicTaskState.resume (READ ONLY)",
+      "result": "PublicTaskState.result",
+      "evidence_bundle": "PublicTaskState.evidence_bundle",
+      "project_name": "project registry display metadata; source not yet bound"
+    }
+  },
+  "swift_mapping": [
+    [
+      "ObserverSnapshot.connectionState",
+      "snapshot.connection_state",
+      "LOSSLESS"
+    ],
+    [
+      "ObserverSnapshot.authoritativeFocusRunID",
+      "snapshot.focus_task_id",
+      "UNBOUND_OPTIONAL"
+    ],
+    [
+      "RunStatusSnapshot.runID",
+      "task.task_id",
+      "LOSSLESS_ALIAS"
+    ],
+    [
+      "RunStatusSnapshot.workspaceID",
+      "task.project_id",
+      "SEMANTIC_NAME_MISMATCH"
+    ],
+    [
+      "RunStatusSnapshot.projectName",
+      "project registry name",
+      "SOURCE_UNKNOWN"
+    ],
+    [
+      "RunStatusSnapshot.executionStatus",
+      "task.state + outcome + decision/access/resume",
+      "LOSSY_BLOCKER"
+    ],
+    [
+      "RunStatusSnapshot.runtimeHealth",
+      "versioned liveness/freshness projection",
+      "INPUTS_UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.runtimePhase",
+      "task.activity/progress or explicit phase",
+      "UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.stage",
+      "structured task.progress",
+      "SCHEMA_PARTIAL"
+    ],
+    [
+      "RunStatusSnapshot.currentOperation",
+      "structured task.activity",
+      "SCHEMA_PARTIAL"
+    ],
+    [
+      "RunStatusSnapshot.elapsedMS",
+      "explicit timing only",
+      "UNBOUND_BLOCKER"
+    ],
+    [
+      "RunStatusSnapshot.startedAt",
+      "explicit start timestamp",
+      "UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.endedAt",
+      "explicit terminal timestamp",
+      "UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.heartbeats",
+      "authority-preserving liveness projection",
+      "UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.tests",
+      "authoritative test summary",
+      "UNBOUND_MODULE"
+    ],
+    [
+      "RunStatusSnapshot.checkpoint",
+      "Director checkpoint read surface",
+      "ENDPOINT_UNCONFIRMED"
+    ],
+    [
+      "RunStatusSnapshot.bundle",
+      "artifact/evidence projection",
+      "UNBOUND_MODULE"
+    ],
+    [
+      "RunStatusSnapshot.presentationStatus",
+      "explicit delivery/presentation authority only",
+      "NO_VCW_AUTHORITY_PROVEN"
+    ],
+    [
+      "RunStatusSnapshot.lastEvent",
+      "Director EventEnvelope",
+      "PARTIAL_EPOCH_UNBOUND"
+    ],
+    [
+      "RunStatusSnapshot.updatedAt",
+      "task.updated_at",
+      "LOSSLESS"
+    ]
+  ],
+  "safe_legacy_display_examples": [
+    [
+      "CREATED",
+      "UNRESOLVED",
+      "PENDING"
+    ],
+    [
+      "RUNNING",
+      "UNRESOLVED",
+      "RUNNING"
+    ],
+    [
+      "TERMINAL",
+      "SUCCEEDED",
+      "COMPLETED"
+    ],
+    [
+      "TERMINAL",
+      "FAILED",
+      "FAILED"
+    ],
+    [
+      "TERMINAL",
+      "CANCELLED",
+      "ABORTED"
+    ]
+  ],
+  "must_not_force_into_current_ExecutionStatus": [
+    "WAITING without explicit reason",
+    "NEEDS_DECISION unless decision_class proves approval semantics",
+    "PAUSED without explicit resumability",
+    "RECONCILING",
+    "CANCELLING",
+    "TERMINAL+PARTIAL",
+    "TERMINAL+BLOCKED",
+    "TERMINAL+OUTCOME_UNKNOWN"
+  ],
+  "detail_surfaces": {
+    "timeline": {
+      "authority": "DIRECTOR_EVENT_LEDGER",
+      "event_fields": [
+        "event_id",
+        "schema_version",
+        "event_type",
+        "task_id",
+        "execution_id?",
+        "step_id?",
+        "aggregate_sequence",
+        "correlation_id?",
+        "causation_id?",
+        "occurred_at",
+        "payload"
+      ]
+    },
+    "tests": {
+      "authority": "DIRECTOR_TEST_EVIDENCE_OR_VERIFICATION_PROJECTION",
+      "binding": "UNCONFIRMED",
+      "cursor": true
+    },
+    "checkpoints_artifacts": {
+      "checkpoint_authority": "EXECUTION_DIRECTOR",
+      "artifact_authority": "EVIDENCE_BUNDLE_OR_RUNNER_TARGET_OBSERVATION",
+      "binding": "PARTIAL",
+      "cursor": true
+    },
+    "logs": {
+      "authority": "SOURCE_LOG_STREAM_WITH_SOURCE_TAG",
+      "binding": "UNCONFIRMED",
+      "cursor": true
+    },
+    "raw_events": {
+      "authority": "DIRECTOR_EVENT_LEDGER",
+      "stable_identity": true,
+      "cursor": true
+    }
+  },
+  "rest_product_contract": {
+    "status": "FROZEN_CLIENT_SURFACE_ENDPOINT_BINDING_PROVISIONAL",
+    "base": "/observer/v1",
+    "endpoints": [
+      "GET /snapshot",
+      "GET /tasks?cursor&limit&scope&query",
+      "GET /tasks/{task_id}",
+      "GET /tasks/{task_id}/timeline?cursor&limit",
+      "GET /tasks/{task_id}/tests?cursor&limit",
+      "GET /tasks/{task_id}/checkpoints-artifacts?cursor&limit",
+      "GET /tasks/{task_id}/logs?cursor&limit&direction&query",
+      "GET /tasks/{task_id}/events?cursor&limit"
+    ],
+    "disclaimer": "Product contract only; does not assert current VCW deployment already exposes these exact HTTP paths."
+  },
+  "event_stream": {
+    "contract_version": "observer.events.v1",
+    "transport_abstraction": "WebSocket; URLSessionWebSocketTask is an implementation candidate",
+    "authority": "INVALIDATION_HINT_ONLY",
+    "envelope": [
+      "event_id",
+      "cursor",
+      "snapshot_revision?",
+      "task_id?",
+      "event_type",
+      "occurred_at",
+      "changed_resources?"
+    ],
+    "rule": "Events never directly overwrite canonical task truth; refetch revisioned resource/snapshot. Deduplicate event_id."
+  },
+  "reconciliation": {
+    "disconnect": "serve last-good snapshot as CACHED; keep connection failure separate",
+    "reconnect": "refetch authoritative snapshot before ONLINE truth",
+    "out_of_order_event": "trigger refetch; do not apply as truth",
+    "duplicate_event": "deduplicate event_id",
+    "schema_unknown": "keep last-good known truth and mark affected module unavailable",
+    "partial_failure": "preserve unaffected modules"
+  },
+  "gaps": [
+    [
+      "GAP-A1-001",
+      "P0_FOR_LIVE_WIRING",
+      "Current Swift ExecutionStatus is not lossless for director.public.v1"
+    ],
+    [
+      "GAP-A1-002",
+      "P0_FOR_LIVE_WIRING",
+      "workspaceID has no safe public-contract binding; migrate to projectID"
+    ],
+    [
+      "GAP-A1-003",
+      "P1",
+      "Health/heartbeat/elapsed sources and thresholds are unproven"
+    ],
+    [
+      "GAP-A1-004",
+      "P1",
+      "Tests/checkpoint/artifact/log deployed endpoint bindings are unconfirmed"
+    ],
+    [
+      "GAP-A1-005",
+      "P1",
+      "PresentationStatus has no proven VCW authority; default UNKNOWN"
+    ],
+    [
+      "GAP-A1-006",
+      "P1",
+      "Existing lastEvent.epoch is not backed by known Director EventEnvelope"
+    ],
+    [
+      "GAP-A1-007",
+      "P1",
+      "No authoritative focus pointer proven"
+    ]
+  ],
+  "phase_gate": {
+    "V3_A1": "CLIENT_CONTRACT_FROZEN_WITH_PARTIAL_BACKEND_BINDING",
+    "V3_A2_allowed": true,
+    "V3_A2": [
+      "Preserve raw Director task state/outcome/recovery/access in Swift domain",
+      "Replace/deprecate workspaceID with projectID",
+      "Introduce ObserverDataSource abstraction",
+      "Retain FixtureDataSource for Preview/Test"
+    ],
+    "network_transport_open": false,
+    "V3_A3_live_wiring_blockers": [
+      "GAP-A1-001",
+      "GAP-A1-002",
+      "GAP-A1-003",
+      "GAP-A1-004"
+    ]
+  }
+}
