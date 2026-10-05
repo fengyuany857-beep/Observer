@@ -52,8 +52,20 @@ public struct RunsView: View {
             .padding(.bottom, ObserverSpacing.x18)
         }
         .searchable(text: $query, prompt: "Project or status")
-        .searchScopes($scope) {
-            ForEach(ObserverRunScope.allCases) { Text($0.rawValue).tag($0) }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Scope", selection: $scope) {
+                        ForEach(ObserverRunScope.allCases) { item in
+                            Text(item.rawValue).tag(item)
+                        }
+                    }
+                } label: {
+                    Label(scope.rawValue, systemImage: "line.3.horizontal.decrease.circle")
+                }
+                .accessibilityLabel("Run scope")
+                .accessibilityValue(scope.rawValue)
+            }
         }
         .navigationTitle("Runs")
         .navigationBarTitleDisplayMode(.inline)
