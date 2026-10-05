@@ -125,6 +125,31 @@ public struct ConnectionIncidentBar: View {
     }
 }
 
+public struct ObserverLiveConnectionRail: View {
+    let incident: ConnectionIncidentPresentation
+
+    public init(_ incident: ConnectionIncidentPresentation) {
+        self.incident = incident
+    }
+
+    public var body: some View {
+        HStack(spacing: ObserverSpacing.x2) {
+            ObserverMetadataKey("LIVE CONNECTION")
+            Spacer(minLength: ObserverSpacing.x3)
+            Circle()
+                .fill(ObserverPalette.color(for: incident.tone))
+                .frame(width: 5, height: 5)
+            Text(incident.title.uppercased())
+                .font(.caption2.weight(.medium))
+                .tracking(0.45)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, ObserverSpacing.x2)
+        .overlay(alignment: .bottom) { Divider() }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 public struct CompletionTruthBlock: View {
     let truth: CompletionTruth
     public init(_ truth: CompletionTruth) { self.truth = truth }
@@ -188,6 +213,7 @@ public struct ObserverInstrumentNode: View {
     let endedAt: Date?
     let tests: TestsPresentation
     let checkpoint: CheckpointPresentation?
+    let healthAttentionElevated: Bool
 
     public init(
         fields: [MetadataFieldPresentation],
@@ -196,7 +222,8 @@ public struct ObserverInstrumentNode: View {
         startedAt: Date,
         endedAt: Date?,
         tests: TestsPresentation,
-        checkpoint: CheckpointPresentation?
+        checkpoint: CheckpointPresentation?,
+        healthAttentionElevated: Bool = false
     ) {
         self.fields = fields
         self.healthFreshness = healthFreshness
@@ -205,6 +232,7 @@ public struct ObserverInstrumentNode: View {
         self.endedAt = endedAt
         self.tests = tests
         self.checkpoint = checkpoint
+        self.healthAttentionElevated = healthAttentionElevated
     }
 
     public var body: some View {
@@ -220,8 +248,19 @@ public struct ObserverInstrumentNode: View {
             Divider()
 
             HStack(alignment: .bottom, spacing: ObserverSpacing.x4) {
-                HealthFreshnessBlock(healthFreshness, terminal: terminal)
+                if healthAttentionElevated {
+                    VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
+                        ObserverMetadataKey(terminal ? "FINAL OBSERVED" : "UPDATED")
+                        Text(healthFreshness.updatedAt, style: .time)
+                            .font(.callout)
+                            .monospacedDigit()
+                    }
+                } else {
+                    HealthFreshnessBlock(healthFreshness, terminal: terminal)
+                }
+
                 Spacer(minLength: ObserverSpacing.x3)
+
                 VStack(alignment: .trailing, spacing: ObserverSpacing.x1) {
                     ObserverMetadataKey("ELAPSED")
                     LocalElapsedClock(startedAt: startedAt, endedAt: endedAt)

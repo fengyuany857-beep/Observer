@@ -79,7 +79,8 @@ public struct OverviewView: View {
                 startedAt: run.startedAt,
                 endedAt: run.endedAt,
                 tests: run.tests,
-                checkpoint: run.checkpoint
+                checkpoint: run.checkpoint,
+                healthAttentionElevated: run.health != .active
             )
 
             if let detail {
