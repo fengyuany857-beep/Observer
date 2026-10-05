@@ -211,11 +211,11 @@ public struct RealObserverDataSource: ObserverDataSource {
 
         let response = try await client.get(request)
 
-        let transportContract = response.header("X-Observer-Transport")
-        guard transportContract == "observer.transport.v1" else {
+        guard let transportContract = response.header("X-Observer-Transport"),
+              transportContract == "observer.transport.v1" else {
             throw ObserverTransportError.contractMismatch(
                 expected: "observer.transport.v1",
-                actual: transportContract
+                actual: response.header("X-Observer-Transport")
             )
         }
 
