@@ -29,7 +29,10 @@ public enum ExecutionStatus: String, CaseIterable, Sendable, Codable {
 }
 
 
-public protocol DirectorRawStringValue: RawRepresentable, Codable, Hashable, Sendable where RawValue == String {}
+public protocol DirectorRawStringValue: Codable, Hashable, Sendable {
+    var rawValue: String { get }
+    init(rawValue: String)
+}
 
 public extension DirectorRawStringValue {
     init(from decoder: Decoder) throws {
