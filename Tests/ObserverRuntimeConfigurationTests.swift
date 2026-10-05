@@ -29,7 +29,8 @@ struct ObserverRuntimeConfigurationTests {
                 projectID: ObserverRuntimeConfigurationStore.defaultProjectID
             )
             expect(defaults.baseURL.scheme == "https", "default URL requires HTTPS")
-            expect(defaults.baseURL.port == 8443, "default Funnel port remains 8443")
+            expect(defaults.baseURL.host == "vcw-observer-read-edge.vercel.app", "default stable edge host")
+            expect(defaults.baseURL.port == nil, "default stable edge uses standard HTTPS port")
             expect(defaults.projectID == "vcw-acceptance", "default project scope")
         } catch {
             expect(false, "defaults validate")
