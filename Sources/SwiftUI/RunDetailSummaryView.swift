@@ -8,7 +8,13 @@ public struct RunDetailSummaryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: ObserverSpacing.x6) {
                 ObserverPageIdentity(presentation.projectName, subtitle: String(presentation.runID.suffix(10)))
-                if let incident = presentation.liveConnectionIncident { ConnectionIncidentBar(incident, liveLabel: true) }
+                if let incident = presentation.liveConnectionIncident {
+                    if incident.state == .online {
+                        ObserverLiveConnectionRail(incident)
+                    } else {
+                        ConnectionIncidentBar(incident, liveLabel: true)
+                    }
+                }
                 if presentation.provenance == .cached { CachedSnapshotNotice("CACHED RUN SNAPSHOT") }
                 ObserverStatusHero(presentation.hero)
                 if presentation.completionTruth.engineeringComplete || presentation.hero.rawValue == ExecutionStatus.finalizing.rawValue {
