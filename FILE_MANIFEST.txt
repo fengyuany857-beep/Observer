@@ -23,6 +23,7 @@ Scripts/package_artifacts.sh
 Scripts/run_core_tests.sh
 Scripts/select_xcode.sh
 Scripts/signing_report.py
+Sources/Domain/ObserverDataSource.swift
 Sources/Domain/ObserverDomain.swift
 Sources/Fixtures/ObserverFixtures.swift
 Sources/Presentation/ObserverPresentation.swift
