@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 @main
@@ -17,6 +18,7 @@ struct ObserverApp: App {
         WindowGroup {
             ObserverLaunchRoot(scenario: scenario, surface: surface)
                 .preferredColorScheme(.dark)
+                .modifier(SnapshotReadinessReporter(scenario: scenario, surface: surface))
         }
     }
 
@@ -55,6 +57,24 @@ public struct ObserverLaunchRoot: View {
                     ContentUnavailableView("No run detail", systemImage: "questionmark.circle")
                 }
             }
+        }
+    }
+}
+
+private struct SnapshotReadinessReporter: ViewModifier {
+    let scenario: ObserverPreviewScenario
+    let surface: ObserverLaunchSurface
+
+    func body(content: Content) -> some View {
+        content.task(id: scenario.rawValue + "-" + surface.rawValue) {
+            guard ProcessInfo.processInfo.arguments.contains("--snapshot-ci-ready") else { return }
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+            let marker = directory.appendingPathComponent(
+                "observer-snapshot-ready-\(scenario.rawValue)-\(surface.rawValue)"
+            )
+            try? Data("ready".utf8).write(to: marker, options: .atomic)
         }
     }
 }
