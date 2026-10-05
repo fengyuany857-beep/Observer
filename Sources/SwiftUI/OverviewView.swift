@@ -7,7 +7,7 @@ public struct OverviewView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: ObserverSpacing.x6) {
+            VStack(alignment: .leading, spacing: ObserverSpacing.x8) {
                 ObserverPageIdentity(presentation.pageIdentity, subtitle: "READ ONLY")
                 if let incident = presentation.connectionIncident { ConnectionIncidentBar(incident) }
                 if let cached = presentation.cachedNotice { CachedSnapshotNotice(cached) }
@@ -23,47 +23,65 @@ public struct OverviewView: View {
 
     @ViewBuilder private var focusContent: some View {
         switch presentation.focusMode {
-        case .focused(let run): runContent(run, lastRun: false)
-        case .lastRun(let run): runContent(run, lastRun: true)
+        case .focused(let run):
+            runContent(run, lastRun: false)
+        case .lastRun(let run):
+            runContent(run, lastRun: true)
         case .aggregate(let aggregate):
-            VStack(alignment: .leading, spacing: ObserverSpacing.x6) {
+            VStack(alignment: .leading, spacing: ObserverSpacing.x8) {
                 ObserverDisplayText(aggregate.primaryLabel)
-                Text(aggregate.secondaryLabel).font(.headline).foregroundStyle(.secondary)
+                Text(aggregate.secondaryLabel)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: ObserverSpacing.x2) {
                     ObserverMetadataKey("ACTIVE RUN IDS")
-                    ForEach(aggregate.runIDs, id: \.self) { Text(String($0.suffix(10))).font(.callout).monospaced() }
+                    ForEach(aggregate.runIDs, id: \.self) {
+                        Text(String($0.suffix(10))).font(.callout).monospaced()
+                    }
                 }
-                .padding(.vertical, ObserverSpacing.x3)
+                .padding(.vertical, ObserverSpacing.x4)
                 .overlay(alignment: .top) { Divider() }
+                .overlay(alignment: .bottom) { Divider() }
             }
         case .empty:
-            VStack(alignment: .leading, spacing: ObserverSpacing.x5) {
+            VStack(alignment: .leading, spacing: ObserverSpacing.x8) {
                 ObserverDisplayText("NO RUN")
-                Text("No observed run is available.").font(.body).foregroundStyle(.secondary)
+                Text("No observed run is available.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
                 DenseMetadataNode([.init(id: "truth", key: "SOURCE", value: "NO RUN SNAPSHOT")])
             }
         }
     }
 
     @ViewBuilder private func runContent(_ run: RunSummaryPresentation, lastRun: Bool) -> some View {
-        VStack(alignment: .leading, spacing: ObserverSpacing.x6) {
+        VStack(alignment: .leading, spacing: ObserverSpacing.x8) {
             if lastRun { ObserverMetadataKey("LAST RUN") }
+
             ObserverStatusHero(run.status)
+
+            if run.health != .active {
+                RuntimeHealthAttentionNode(run.health)
+            }
+
             if run.completionTruth.engineeringComplete || run.status.rawValue == ExecutionStatus.finalizing.rawValue {
                 CompletionTruthBlock(run.completionTruth)
             }
-            if let op = run.currentOperation { CurrentOperationBlock(op) }
-            DenseMetadataNode(run.metadata)
-            HStack(alignment: .bottom) {
-                HealthFreshnessBlock(run.healthFreshness, terminal: run.endedAt != nil)
-                Spacer(minLength: ObserverSpacing.x4)
-                VStack(alignment: .trailing, spacing: ObserverSpacing.x1) {
-                    ObserverMetadataKey("ELAPSED")
-                    LocalElapsedClock(startedAt: run.startedAt, endedAt: run.endedAt)
-                }
+
+            if let op = run.currentOperation {
+                CurrentOperationBlock(op)
             }
-            TestProgressRow(run.tests)
-            if let cp = run.checkpoint { CheckpointRow(cp) }
+
+            ObserverInstrumentNode(
+                fields: run.metadata,
+                healthFreshness: run.healthFreshness,
+                terminal: run.endedAt != nil,
+                startedAt: run.startedAt,
+                endedAt: run.endedAt,
+                tests: run.tests,
+                checkpoint: run.checkpoint
+            )
+
             if let detail {
                 NavigationLink { RunDetailSummaryView(presentation: detail) } label: {
                     DestinationRow("Run Detail", detail: "Truth, evidence, timeline, logs")
