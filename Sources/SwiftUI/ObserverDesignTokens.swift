@@ -41,13 +41,13 @@ public enum ObserverPalette {
 }
 
 public struct ObserverDisplayText: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var displaySize: CGFloat = 56
+    @ScaledMetric(relativeTo: .largeTitle) private var displaySize: CGFloat = 58
     public let text: String
     public init(_ text: String) { self.text = text }
     public var body: some View {
         Text(text)
-            .font(.system(size: displaySize, weight: .semibold, design: .default))
-            .tracking(-1.2)
+            .font(.system(size: displaySize, weight: .medium, design: .default))
+            .tracking(-1.4)
             .lineLimit(2)
             .accessibilityAddTraits(.isHeader)
     }
@@ -59,7 +59,27 @@ public struct ObserverMetadataKey: View {
     public var body: some View {
         Text(text.uppercased())
             .font(.caption2.weight(.medium))
-            .tracking(0.45)
+            .tracking(0.55)
             .foregroundStyle(.secondary)
+    }
+}
+
+public extension View {
+    @ViewBuilder
+    func observerTabBarMinimizeIfAvailable() -> some View {
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func observerSearchToolbarMinimizeIfAvailable() -> some View {
+        if #available(iOS 26.0, *) {
+            self.searchToolbarBehavior(.minimize)
+        } else {
+            self
+        }
     }
 }
