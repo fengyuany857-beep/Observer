@@ -31,22 +31,31 @@ public struct ObserverPreviewShell: View {
             NavigationStack {
                 OverviewView(presentation: overview, detail: preferredDetail)
             }
-            .tabItem { Label("Overview", systemImage: "scope") }
+            .tabItem {
+                Label("Overview", systemImage: "scope")
+                    .labelStyle(.iconOnly)
+            }
             .tag(ObserverRootTab.overview)
 
             NavigationStack {
                 RunsView(rows: rows, details: details, incident: overview.connectionIncident, cachedNotice: overview.cachedNotice)
             }
-            .tabItem { Label("Runs", systemImage: "list.bullet.rectangle") }
+            .tabItem {
+                Label("Runs", systemImage: "list.bullet.rectangle")
+                    .labelStyle(.iconOnly)
+            }
             .tag(ObserverRootTab.runs)
 
             NavigationStack {
                 SettingsPreviewView()
             }
-            .tabItem { Label("Settings", systemImage: "gearshape") }
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+                    .labelStyle(.iconOnly)
+            }
             .tag(ObserverRootTab.settings)
         }
-        .tint(Color.primary)
+        .tint(Color.secondary)
         .observerTabBarMinimizeIfAvailable()
     }
 }
