@@ -3,7 +3,7 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main, observer-v3-a5-3-candidate-20261006 ]
+    branches: [ main ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
