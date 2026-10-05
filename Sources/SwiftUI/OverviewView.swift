@@ -38,7 +38,7 @@ public struct OverviewView: View {
             }
         case .empty:
             VStack(alignment: .leading, spacing: ObserverSpacing.x5) {
-                ObserverDisplayText("IDLE")
+                ObserverDisplayText("NO RUN")
                 Text("No observed run is available.").font(.body).foregroundStyle(.secondary)
                 DenseMetadataNode([.init(id: "truth", key: "SOURCE", value: "NO RUN SNAPSHOT")])
             }
@@ -55,7 +55,7 @@ public struct OverviewView: View {
             if let op = run.currentOperation { CurrentOperationBlock(op) }
             DenseMetadataNode(run.metadata)
             HStack(alignment: .bottom) {
-                HealthFreshnessBlock(run.healthFreshness)
+                HealthFreshnessBlock(run.healthFreshness, terminal: run.endedAt != nil)
                 Spacer(minLength: ObserverSpacing.x4)
                 VStack(alignment: .trailing, spacing: ObserverSpacing.x1) {
                     ObserverMetadataKey("ELAPSED")
