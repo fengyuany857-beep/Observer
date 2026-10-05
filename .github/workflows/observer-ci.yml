@@ -1,4 +1,5 @@
 name: Observer CI + Self-Sign
+# A5.3 candidate CI trigger
 
 on:
   workflow_dispatch:
