@@ -53,6 +53,10 @@ struct ObserverCoreTests {
             expect(run.endedAt != nil, "terminal fixture has endedAt for static elapsed")
         } else { expect(false, "authoritative completed focus") }
 
+        if let completedDetail = ObserverProjectionBuilder.makeRunDetail(completedUnknownFixture.snapshot, runID: completedUnknownFixture.snapshot.runs[0].runID) {
+            expect(completedDetail.truthRows.contains(where: { $0.key == "FINAL HEALTH" }), "terminal detail labels health as final observation")
+        } else { expect(false, "completed detail projection exists") }
+
         let completedBase = completedUnknownFixture.snapshot.runs[0]
         let exportedRun = RunStatusSnapshot(
             runID: completedBase.runID,
@@ -113,7 +117,8 @@ struct ObserverCoreTests {
            let detail = ObserverProjectionBuilder.makeRunDetail(running.snapshot, runID: detailID) {
             expect(detail.destinations.count == 5, "detail has five navigation destinations")
             expect(detail.truthRows.count == 4, "truth matrix separates four run truth dimensions")
-            expect(detail.liveConnectionIncident == nil, "online detail has no incident banner")
+            expect(detail.liveConnectionIncident?.state == .online, "online detail exposes live connection")
+            expect(detail.liveConnectionIncident?.title == "ONLINE", "online detail labels live connection explicitly")
         } else { expect(false, "run detail projection exists") }
 
         let auth = ObserverFixtureFactory.make(.authFailedCached)
