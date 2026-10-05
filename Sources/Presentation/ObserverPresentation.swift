@@ -178,6 +178,13 @@ public enum ObserverProjectionBuilder {
         }
     }
 
+    public static func liveConnection(_ state: ConnectionState, lastSyncAt: Date, observedAt: Date) -> ConnectionIncidentPresentation {
+        if let incident = connectionIncident(state, lastSyncAt: lastSyncAt, observedAt: observedAt) {
+            return incident
+        }
+        return .init(state: .online, title: "ONLINE", detail: "Current observer connection", symbolName: "wifi", tone: .positive)
+    }
+
     public static func completionTruth(_ run: RunStatusSnapshot) -> CompletionTruth {
         .init(
             engineeringComplete: run.executionStatus == .completed,
@@ -249,7 +256,7 @@ public enum ObserverProjectionBuilder {
         guard let run = snapshot.runs.first(where: { $0.runID == runID }) else { return nil }
         let truth: [TruthRowPresentation] = [
             .init(id: "execution", key: "EXECUTION", value: run.executionStatus.rawValue, tone: run.executionStatus == .failed ? .negative : .neutral),
-            .init(id: "health", key: "HEALTH", value: run.runtimeHealth.rawValue, tone: run.runtimeHealth == .suspectedStuck ? .warning : .neutral),
+            .init(id: "health", key: run.executionStatus.isTerminal ? "FINAL HEALTH" : "HEALTH", value: run.runtimeHealth.rawValue, tone: run.runtimeHealth == .suspectedStuck ? .warning : .neutral),
             .init(id: "artifact", key: "ARTIFACT", value: run.bundle.status.rawValue, tone: run.bundle.status == .verified ? .positive : (run.bundle.status == .failed ? .negative : .neutral)),
             .init(id: "presentation", key: "PRESENTATION", value: run.presentationStatus.rawValue, tone: .neutral)
         ]
@@ -259,7 +266,7 @@ public enum ObserverProjectionBuilder {
         return .init(
             runID: run.runID,
             projectName: run.projectName,
-            liveConnectionIncident: connectionIncident(snapshot.connectionState, lastSyncAt: snapshot.lastSyncAt, observedAt: snapshot.observedAt),
+            liveConnectionIncident: liveConnection(snapshot.connectionState, lastSyncAt: snapshot.lastSyncAt, observedAt: snapshot.observedAt),
             hero: status(run.executionStatus),
             completionTruth: completionTruth(run),
             currentOperation: current,
