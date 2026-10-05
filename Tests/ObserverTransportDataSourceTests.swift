@@ -111,7 +111,7 @@ struct ObserverTransportDataSourceTests {
         status: Int,
         code: String
     ) -> ObserverHTTPResponse {
-        let json = #"{"error":{"code":"#(code)"}}"#
+        let json = "{\"error\":{\"code\":\"\(code)\"}}"
         return ObserverHTTPResponse(
             statusCode: status,
             headers: ["x-observer-transport": "observer.transport.v1"],
