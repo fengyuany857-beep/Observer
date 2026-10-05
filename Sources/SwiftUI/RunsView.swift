@@ -78,7 +78,7 @@ public struct RunsView: View {
                 switch scope {
                 case .all: true
                 case .active: ["PENDING","STARTING","RUNNING","WAITING_APPROVAL","VERIFYING","FINALIZING"].contains(row.status.rawValue)
-                case .completed: row.status.rawValue == "COMPLETED"
+
                 case .attention: row.abnormalHealth != nil || ["FAILED","WAITING_APPROVAL","RESUMABLE"].contains(row.status.rawValue)
                 }
             }()
