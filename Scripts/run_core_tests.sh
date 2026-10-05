@@ -18,3 +18,13 @@ swiftc \
   Tests/ObserverTransportDataSourceTests.swift \
   -o build/core-tests/ObserverTransportDataSourceTests
 build/core-tests/ObserverTransportDataSourceTests | tee -a Artifacts/Observer-Core-Test-Report.txt
+
+swiftc \
+  Sources/Domain/ObserverDomain.swift \
+  Sources/Domain/ObserverDataSource.swift \
+  Sources/Domain/RealObserverDataSource.swift \
+  Sources/Domain/ObserverRuntimeConfiguration.swift \
+  Tests/ObserverRuntimeConfigurationTests.swift \
+  -framework Security \
+  -o build/core-tests/ObserverRuntimeConfigurationTests
+build/core-tests/ObserverRuntimeConfigurationTests | tee -a Artifacts/Observer-Core-Test-Report.txt
