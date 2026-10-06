@@ -10,6 +10,7 @@ on:
       - 'Sources/**'
       - 'Tests/**'
       - 'Scripts/**'
+      - 'Packages/**'
       - 'project.yml'
       - '.github/workflows/observer-ci.yml'
 
@@ -29,6 +30,9 @@ jobs:
 
       - name: Install XcodeGen and generate project
         run: Scripts/bootstrap_xcodegen.sh
+
+      - name: Run ObserverReadAPI package tests
+        run: swift test --package-path Packages/ObserverReadAPI
 
       - name: Run Foundation-only core tests
         run: Scripts/run_core_tests.sh

@@ -53,7 +53,8 @@ struct ObserverTransportDataSourceTests {
 
     private static func snapshotResponse(
         contract: String = "observer.snapshot.v1",
-        sessionState: String = "RUNNING"
+        sessionState: String = "RUNNING",
+        heartbeatsJSON: String = "[]"
     ) -> ObserverHTTPResponse {
         let json = """
         {
@@ -87,7 +88,7 @@ struct ObserverTransportDataSourceTests {
               "remaining_seconds": 1800.0
             }
           ],
-          "heartbeats": [],
+          "heartbeats": \(heartbeatsJSON),
           "effects": [],
           "events": [],
           "event_cursor": 672,
@@ -172,6 +173,15 @@ struct ObserverTransportDataSourceTests {
             }
 
             expect(
+                envelope.systemHealth?.isEmpty == true,
+                "empty heartbeat set remains explicit empty system telemetry"
+            )
+            expect(
+                envelope.snapshot.runs.first?.runtimeHealth == .unknown,
+                "empty component telemetry does not fabricate run health"
+            )
+
+            expect(
                 envelope.transportMetadata?.sourceInstanceID == "vcw-store:abc123",
                 "source instance preserved"
             )
@@ -208,6 +218,52 @@ struct ObserverTransportDataSourceTests {
             )
         } catch {
             print("FAIL live decode threw \(error)")
+            failures += 1
+        }
+
+        do {
+            let heartbeats = """
+            [
+              {
+                "component": "gateway",
+                "status": "HEALTHY",
+                "observed_at": 1791151198.0,
+                "detail": {"source": "gateway"},
+                "age_seconds": 2.0,
+                "freshness": "FRESH"
+              },
+              {
+                "component": "runner",
+                "status": "FUTURE_STATUS",
+                "observed_at": 1791151180.0,
+                "detail": {"source": "runner"},
+                "age_seconds": 20.0,
+                "freshness": "FUTURE_FRESHNESS"
+              }
+            ]
+            """
+            let client = StubHTTPClient([
+                .response(snapshotResponse(heartbeatsJSON: heartbeats))
+            ])
+            let source = RealObserverDataSource(
+                configuration: try configuration(),
+                client: client
+            )
+            let envelope = try await source.load()
+            let components = envelope.systemHealth?.components ?? []
+
+            expect(envelope.systemHealth?.provenance == .live, "component health live provenance")
+            expect(envelope.systemHealth?.observedAt == envelope.snapshot.observedAt, "component health shares source observation time")
+            expect(components.count == 2, "component heartbeats decoded separately")
+            expect(components.first?.component == "gateway", "component health ordering is deterministic")
+            expect(components.first?.status == "HEALTHY", "known component status preserved raw")
+            expect(components.first?.freshness == "FRESH", "component freshness preserved raw")
+            expect(components.last?.status == "FUTURE_STATUS", "future component status preserved losslessly")
+            expect(components.last?.freshness == "FUTURE_FRESHNESS", "future freshness preserved losslessly")
+            expect(envelope.snapshot.runs.first?.runtimeHealth == .unknown, "component health does not overwrite run health")
+            expect(envelope.snapshot.connectionState == .online, "component health does not overwrite transport connection state")
+        } catch {
+            print("FAIL component-health decode threw \(error)")
             failures += 1
         }
 
@@ -262,8 +318,20 @@ struct ObserverTransportDataSourceTests {
 
         do {
             let cache = ObserverLastGoodCache()
+            let heartbeats = """
+            [
+              {
+                "component": "gateway",
+                "status": "HEALTHY",
+                "observed_at": 1791151198.0,
+                "detail": {},
+                "age_seconds": 2.0,
+                "freshness": "FRESH"
+              }
+            ]
+            """
             let client = StubHTTPClient([
-                .response(snapshotResponse()),
+                .response(snapshotResponse(heartbeatsJSON: heartbeats)),
                 .networkFailure
             ])
             let source = RealObserverDataSource(
@@ -278,6 +346,8 @@ struct ObserverTransportDataSourceTests {
                 "network failure becomes server unreachable"
             )
             expect(cached.snapshot.provenance == .cached, "network failure serves cache")
+            expect(cached.systemHealth?.provenance == .cached, "cached system health is marked cached")
+            expect(cached.systemHealth?.components.first?.status == "HEALTHY", "cached component evidence is preserved without becoming live")
         } catch {
             print("FAIL network-cache sequence threw \(error)")
             failures += 1

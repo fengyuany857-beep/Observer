@@ -271,9 +271,17 @@ public struct RealObserverDataSource: ObserverDataSource {
             lastSyncAt: old.lastSyncAt,
             provenance: .cached
         )
+        let cachedSystemHealth = envelope.systemHealth.map {
+            SystemHealthSnapshot(
+                components: $0.components,
+                observedAt: $0.observedAt,
+                provenance: .cached
+            )
+        }
         return ObserverDataEnvelope(
             snapshot: snapshot,
             preferredDetailRunID: envelope.preferredDetailRunID,
+            systemHealth: cachedSystemHealth,
             transportMetadata: envelope.transportMetadata
         )
     }
@@ -295,6 +303,7 @@ private struct TransportSnapshotDTO: Decodable {
     let authoritativeFocusTaskID: String?
     let projects: [ProjectDTO]
     let sessions: [SessionDTO]
+    let heartbeats: [HeartbeatDTO]
     let eventCursor: Int
     let availability: [String: String]
 
@@ -306,6 +315,7 @@ private struct TransportSnapshotDTO: Decodable {
         case authoritativeFocusTaskID = "authoritative_focus_task_id"
         case projects
         case sessions
+        case heartbeats
         case eventCursor = "event_cursor"
         case availability
     }
@@ -387,6 +397,23 @@ private struct TransportSnapshotDTO: Decodable {
         }
         let preferred = exactFocus ?? runs.first?.runID
 
+        let components = heartbeats
+            .map {
+                ComponentHealthSnapshot(
+                    component: $0.component,
+                    status: $0.status,
+                    observedAt: Date(timeIntervalSince1970: $0.observedAt),
+                    ageSeconds: $0.ageSeconds,
+                    freshness: $0.freshness
+                )
+            }
+            .sorted {
+                if $0.component == $1.component {
+                    return $0.observedAt < $1.observedAt
+                }
+                return $0.component < $1.component
+            }
+
         return ObserverDataEnvelope(
             snapshot: ObserverSnapshot(
                 connectionState: .online,
@@ -397,6 +424,11 @@ private struct TransportSnapshotDTO: Decodable {
                 provenance: .live
             ),
             preferredDetailRunID: preferred,
+            systemHealth: SystemHealthSnapshot(
+                components: components,
+                observedAt: observedDate,
+                provenance: .live
+            ),
             transportMetadata: ObserverTransportMetadata(
                 transportContractVersion: transportContractVersion,
                 snapshotContractVersion: contractVersion,
@@ -430,6 +462,22 @@ private struct TransportSnapshotDTO: Decodable {
         default:
             return .unknown
         }
+    }
+}
+
+private struct HeartbeatDTO: Decodable {
+    let component: String
+    let status: String
+    let observedAt: TimeInterval
+    let ageSeconds: TimeInterval
+    let freshness: String
+
+    enum CodingKeys: String, CodingKey {
+        case component
+        case status
+        case observedAt = "observed_at"
+        case ageSeconds = "age_seconds"
+        case freshness
     }
 }
 

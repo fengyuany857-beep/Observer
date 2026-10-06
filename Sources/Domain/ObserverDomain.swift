@@ -233,6 +233,46 @@ public enum SnapshotProvenance: String, Sendable, Codable {
     case cached = "CACHED"
 }
 
+public struct ComponentHealthSnapshot: Sendable, Codable, Equatable {
+    public let component: String
+    public let status: String
+    public let observedAt: Date
+    public let ageSeconds: TimeInterval
+    public let freshness: String
+
+    public init(
+        component: String,
+        status: String,
+        observedAt: Date,
+        ageSeconds: TimeInterval,
+        freshness: String
+    ) {
+        self.component = component
+        self.status = status
+        self.observedAt = observedAt
+        self.ageSeconds = ageSeconds
+        self.freshness = freshness
+    }
+}
+
+public struct SystemHealthSnapshot: Sendable, Codable, Equatable {
+    public let components: [ComponentHealthSnapshot]
+    public let observedAt: Date
+    public let provenance: SnapshotProvenance
+
+    public init(
+        components: [ComponentHealthSnapshot],
+        observedAt: Date,
+        provenance: SnapshotProvenance
+    ) {
+        self.components = components
+        self.observedAt = observedAt
+        self.provenance = provenance
+    }
+
+    public var isEmpty: Bool { components.isEmpty }
+}
+
 public struct StageSnapshot: Sendable, Codable, Equatable {
     public let id: String
     public let name: String
