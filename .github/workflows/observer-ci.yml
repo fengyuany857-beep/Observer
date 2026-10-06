@@ -3,7 +3,7 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, observer-b0-authority-time-20261006 ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
@@ -76,6 +76,7 @@ jobs:
             Artifacts/Observer-Signing-Report.json
             Artifacts/Observer-Signing-Report.txt
             Artifacts/Observer-Core-Test-Report.txt
+            Artifacts/Observer-B0-Contract-Test-Report.txt
             Artifacts/Observer-Build-Manifest.txt
             Artifacts/Observer-Simulator-Build.log
             Artifacts/Observer-Device-Unsigned-Build.log
