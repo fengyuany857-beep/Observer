@@ -1,0 +1,31 @@
+{
+  "gate_id": "observer.b0-a6.compatibility.v1",
+  "phase": "B0.5",
+  "status": "CANDIDATE_STATIC_GATE",
+  "b0_contract_ref": "observer.backend.authority-time.v1",
+  "a6_baseline": {
+    "repository": "fengyuany857-beep/Observer",
+    "branch": "observer-a6-openapi-ci-20261006",
+    "commit": "04eebed2c2c6d673dd6d94251ae76860af7dda91",
+    "read_contract": "Packages/ObserverReadAPI/Sources/ObserverReadAPI/openapi.yaml"
+  },
+  "required_a6_facts": [
+    {"id":"A6-F01","path":"ObserverSession.expires_at","expect":"present"},
+    {"id":"A6-F02","path":"ObserverSession.remaining_seconds","expect":"present"},
+    {"id":"A6-F03","path":"ObserverJob.session_id","expect":"present"},
+    {"id":"A6-F04","path":"ObserverOperation.session_id","expect":"present"},
+    {"id":"A6-F05","path":"ObserverOperation.currentness","expect":"present"},
+    {"id":"A6-F06","path":"operations endpoint semantics","expect":"process-local Gateway operations currently in flight"},
+    {"id":"A6-F07","path":"jobs endpoint semantics","expect":"RUNNING is last-observed active state"}
+  ],
+  "compatibility_rules": [
+    "B0 does not redefine Project/Session/Job/Operation identity.",
+    "B0 does not derive current Operation from Session or Job state.",
+    "B0 treats Session expiry as authority/lifecycle input, not Job completion.",
+    "B0 daily-close policy is orthogonal to A6 Session state.",
+    "B0 credential/grant/approval secrets are not added to Observer Read Plane.",
+    "B0 may later add public lease/policy projections only through explicit versioned contract work."
+  ],
+  "expected_result": "COMPATIBLE_IF_ALL_REQUIRED_A6_FACTS_PRESENT",
+  "production_effect": "NONE"
+}
