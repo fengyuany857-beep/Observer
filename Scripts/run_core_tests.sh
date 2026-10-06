@@ -2,6 +2,8 @@
 set -euo pipefail
 mkdir -p build/core-tests Artifacts
 
+python3 Scripts/validate_b0_contract.py | tee Artifacts/Observer-B0-Contract-Test-Report.txt
+
 swiftc \
   Sources/Domain/ObserverDomain.swift \
   Sources/Domain/ObserverDataSource.swift \
