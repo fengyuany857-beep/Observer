@@ -20,6 +20,7 @@ public final class ObserverLiveViewModel: ObservableObject {
     @Published public private(set) var eventCursor: Int?
     @Published public private(set) var lastInvalidationReason: String?
     @Published public private(set) var lastEventPollErrorCode: String?
+    @Published public private(set) var lastOperationPollErrorCode: String?
 
     private let configurationStore: ObserverRuntimeConfigurationStore
     private var dataSource: RealObserverDataSource?
@@ -99,6 +100,7 @@ public final class ObserverLiveViewModel: ObservableObject {
         self.eventCursor = nil
         self.lastInvalidationReason = nil
         self.lastEventPollErrorCode = nil
+        self.lastOperationPollErrorCode = nil
         self.credentialStored = true
         self.envelope = nil
         self.lastErrorCode = nil
@@ -114,6 +116,7 @@ public final class ObserverLiveViewModel: ObservableObject {
         eventCursor = nil
         lastInvalidationReason = nil
         lastEventPollErrorCode = nil
+        lastOperationPollErrorCode = nil
         envelope = nil
         lastErrorCode = nil
         configurationRevision += 1
@@ -128,9 +131,14 @@ public final class ObserverLiveViewModel: ObservableObject {
 
         do {
             let loaded = try await dataSource.load()
-            envelope = loaded
-
             let isLive = loaded.snapshot.provenance == .live
+            envelope = isLive
+                ? await envelopeWithCurrentOperations(loaded)
+                : Self.replacingSnapshot(
+                    in: loaded,
+                    with: ObserverCurrentOperationOverlay.clearing(loaded.snapshot)
+                )
+
             if isLive, let metadata = loaded.transportMetadata {
                 if eventCursorStore.seed(
                     projectID: projectID,
@@ -183,6 +191,8 @@ public final class ObserverLiveViewModel: ObservableObject {
                 if quietPolls >= Self.quietPollsBeforeSafetyRefresh {
                     _ = await refresh()
                     quietPolls = 0
+                } else {
+                    await refreshCurrentOperationsOnly()
                 }
             case .unavailable:
                 unavailablePolls += 1
@@ -190,11 +200,86 @@ public final class ObserverLiveViewModel: ObservableObject {
                     _ = await refresh()
                     quietPolls = 0
                     unavailablePolls = 0
+                } else {
+                    await refreshCurrentOperationsOnly()
                 }
             case .deferred:
                 continue
             }
         }
+    }
+
+    private func refreshCurrentOperationsOnly() async {
+        guard !isRefreshing, let current = envelope else { return }
+        guard current.snapshot.provenance == .live else {
+            envelope = Self.replacingSnapshot(
+                in: current,
+                with: ObserverCurrentOperationOverlay.clearing(current.snapshot)
+            )
+            return
+        }
+        envelope = await envelopeWithCurrentOperations(current)
+    }
+
+    private func envelopeWithCurrentOperations(
+        _ loaded: ObserverDataEnvelope
+    ) async -> ObserverDataEnvelope {
+        let cleared = Self.replacingSnapshot(
+            in: loaded,
+            with: ObserverCurrentOperationOverlay.clearing(loaded.snapshot)
+        )
+
+        guard loaded.snapshot.provenance == .live else {
+            return cleared
+        }
+        guard let eventClient else {
+            lastOperationPollErrorCode = "OPERATION_CLIENT_UNAVAILABLE"
+            return cleared
+        }
+        guard let metadata = loaded.transportMetadata else {
+            lastOperationPollErrorCode = "OPERATION_SOURCE_METADATA_MISSING"
+            return cleared
+        }
+
+        do {
+            let page = try await eventClient.operations(projectID: projectID)
+            guard page.sourceInstanceID == metadata.sourceInstanceID else {
+                lastOperationPollErrorCode = "OPERATION_SOURCE_MISMATCH"
+                return cleared
+            }
+
+            var operationsByRunID: [String: OperationSnapshot] = [:]
+            for operation in page.operations {
+                operationsByRunID[operation.sessionID] = OperationSnapshot(
+                    kind: operation.kind,
+                    name: operation.name,
+                    startedAt: operation.startedAt
+                )
+            }
+            lastOperationPollErrorCode = nil
+            return Self.replacingSnapshot(
+                in: loaded,
+                with: ObserverCurrentOperationOverlay.applying(
+                    operationsByRunID,
+                    to: loaded.snapshot
+                )
+            )
+        } catch {
+            lastOperationPollErrorCode = Self.readAPIErrorCode(error)
+            return cleared
+        }
+    }
+
+    private static func replacingSnapshot(
+        in envelope: ObserverDataEnvelope,
+        with snapshot: ObserverSnapshot
+    ) -> ObserverDataEnvelope {
+        ObserverDataEnvelope(
+            snapshot: snapshot,
+            preferredDetailRunID: envelope.preferredDetailRunID,
+            systemHealth: envelope.systemHealth,
+            transportMetadata: envelope.transportMetadata
+        )
     }
 
     private func pollEventInvalidation() async -> ObserverEventPollOutcome {
