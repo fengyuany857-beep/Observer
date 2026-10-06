@@ -56,6 +56,8 @@ class ApprovalRequest:
     last_decision: Optional[str] = None
     consumed_session_ref: Optional[str] = None
     consumed_mint_attempt_id: Optional[str] = None
+    reconcile_session_ref: Optional[str] = None
+    reconcile_mint_attempt_id: Optional[str] = None
     reason: Optional[str] = None
 
 
@@ -190,7 +192,7 @@ class ApprovalBroker:
 
     def consume_for_session(self, *, approval_id: str, now: float,
                             mint_attempt_id: str, session_ref: str,
-                            mint_commit_proven: bool) -> ApprovalRequest:
+                            mint_commit_proven: Optional[bool]) -> ApprovalRequest:
         if not mint_attempt_id.strip() or not session_ref.strip():
             raise ApprovalError("mint identity required")
 
@@ -200,6 +202,13 @@ class ApprovalBroker:
             if item.consumed_mint_attempt_id == mint_attempt_id and item.consumed_session_ref == session_ref:
                 return item
             raise DuplicateSessionMint("approval already consumed by another session mint")
+        if item.state == "OUTCOME_UNKNOWN":
+            if (
+                item.reconcile_mint_attempt_id == mint_attempt_id
+                and item.reconcile_session_ref == session_ref
+            ):
+                return item
+            raise StateConflict("approval requires reconciliation before another mint")
         if item.state == "EXPIRED":
             raise Expired(approval_id)
         if item.state != "APPROVED":
@@ -209,7 +218,19 @@ class ApprovalBroker:
         if existing_owner and existing_owner != session_ref:
             raise DuplicateSessionMint("approval already reserved by another session")
 
-        if not mint_commit_proven:
+        if mint_commit_proven is False:
+            return item
+
+        if mint_commit_proven is None:
+            item = replace(
+                item,
+                state="OUTCOME_UNKNOWN",
+                state_version=item.state_version + 1,
+                reconcile_session_ref=session_ref,
+                reconcile_mint_attempt_id=mint_attempt_id,
+                reason="SESSION_MINT_OUTCOME_AMBIGUOUS",
+            )
+            self._by_id[approval_id] = item
             return item
 
         self._mint_owner[approval_id] = session_ref
@@ -221,6 +242,40 @@ class ApprovalBroker:
             consumed_mint_attempt_id=mint_attempt_id,
             reason="SESSION_MINT_COMMITTED",
         )
+        self._by_id[approval_id] = item
+        return item
+
+    def reconcile_mint_outcome(self, *, approval_id: str, now: float,
+                               mint_attempt_id: str, session_ref: str,
+                               committed: bool) -> ApprovalRequest:
+        item = self._by_id.get(approval_id)
+        if item is None:
+            raise NotFound(approval_id)
+        if item.state != "OUTCOME_UNKNOWN":
+            raise StateConflict(f"cannot reconcile from {item.state}")
+        if item.reconcile_mint_attempt_id != mint_attempt_id or item.reconcile_session_ref != session_ref:
+            raise StateConflict("reconcile identity mismatch")
+
+        if committed:
+            self._mint_owner[approval_id] = session_ref
+            item = replace(
+                item,
+                state="CONSUMED",
+                state_version=item.state_version + 1,
+                consumed_session_ref=session_ref,
+                consumed_mint_attempt_id=mint_attempt_id,
+                reason="RECONCILED_SESSION_MINT_COMMITTED",
+            )
+        else:
+            next_state = "EXPIRED" if now >= item.expires_at else "APPROVED"
+            item = replace(
+                item,
+                state=next_state,
+                state_version=item.state_version + 1,
+                reconcile_session_ref=None,
+                reconcile_mint_attempt_id=None,
+                reason="RECONCILED_SESSION_MINT_NOT_COMMITTED",
+            )
         self._by_id[approval_id] = item
         return item
 
