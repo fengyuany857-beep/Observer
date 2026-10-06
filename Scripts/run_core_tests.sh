@@ -3,6 +3,7 @@ set -euo pipefail
 mkdir -p build/core-tests Artifacts
 
 python3 Scripts/validate_b0_contract.py | tee Artifacts/Observer-B0-Contract-Test-Report.txt
+python3 Scripts/test_b1_approval_broker.py | tee Artifacts/Observer-B1-Approval-Test-Report.txt
 
 swiftc \
   Sources/Domain/ObserverDomain.swift \
