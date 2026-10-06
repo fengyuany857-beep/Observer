@@ -1,4 +1,12 @@
 import SwiftUI
+import ObserverReadAPI
+
+private enum ObserverEventPollOutcome {
+    case unchanged
+    case invalidated(ObserverEventInvalidationReason)
+    case unavailable(String)
+    case deferred
+}
 
 @MainActor
 public final class ObserverLiveViewModel: ObservableObject {
@@ -9,9 +17,18 @@ public final class ObserverLiveViewModel: ObservableObject {
     @Published public private(set) var credentialStored = false
     @Published public private(set) var baseURLString: String
     @Published public private(set) var projectID: String
+    @Published public private(set) var eventCursor: Int?
+    @Published public private(set) var lastInvalidationReason: String?
+    @Published public private(set) var lastEventPollErrorCode: String?
 
     private let configurationStore: ObserverRuntimeConfigurationStore
     private var dataSource: RealObserverDataSource?
+    private var eventClient: ObserverReadAPIClient?
+    private var eventCursorStore = ObserverEventCursorStore()
+
+    private static let eventPollIntervalNanoseconds: UInt64 = 2_000_000_000
+    private static let quietPollsBeforeSafetyRefresh = 15
+    private static let unavailablePollsBeforeFallbackRefresh = 3
 
     public init(
         configurationStore: ObserverRuntimeConfigurationStore = ObserverRuntimeConfigurationStore()
@@ -24,6 +41,7 @@ public final class ObserverLiveViewModel: ObservableObject {
         do {
             if let configuration = try configurationStore.makeTransportConfiguration() {
                 self.dataSource = RealObserverDataSource(configuration: configuration)
+                self.eventClient = try Self.makeEventClient(configuration)
                 self.credentialStored = true
             }
         } catch {
@@ -76,6 +94,11 @@ public final class ObserverLiveViewModel: ObservableObject {
         self.baseURLString = settings.baseURL.absoluteString
         self.projectID = settings.projectID
         self.dataSource = RealObserverDataSource(configuration: configuration)
+        self.eventClient = try Self.makeEventClient(configuration)
+        self.eventCursorStore.reset()
+        self.eventCursor = nil
+        self.lastInvalidationReason = nil
+        self.lastEventPollErrorCode = nil
         self.credentialStored = true
         self.envelope = nil
         self.lastErrorCode = nil
@@ -86,37 +109,170 @@ public final class ObserverLiveViewModel: ObservableObject {
         try configurationStore.deleteBearerToken()
         credentialStored = false
         dataSource = nil
+        eventClient = nil
+        eventCursorStore.reset()
+        eventCursor = nil
+        lastInvalidationReason = nil
+        lastEventPollErrorCode = nil
         envelope = nil
         lastErrorCode = nil
         configurationRevision += 1
     }
 
-    public func refresh() async {
-        guard let dataSource else { return }
+    @discardableResult
+    public func refresh() async -> Bool {
+        guard let dataSource else { return false }
+        guard !isRefreshing else { return false }
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            envelope = try await dataSource.load()
+            let loaded = try await dataSource.load()
+            envelope = loaded
+
+            let isLive = loaded.snapshot.provenance == .live
+            if isLive, let metadata = loaded.transportMetadata {
+                if eventCursorStore.seed(
+                    projectID: projectID,
+                    sourceInstanceID: metadata.sourceInstanceID,
+                    cursor: metadata.eventCursor
+                ) {
+                    eventCursor = metadata.eventCursor
+                    lastEventPollErrorCode = nil
+                } else {
+                    eventCursor = nil
+                    lastEventPollErrorCode = "EVENT_CURSOR_BASELINE_INVALID"
+                }
+            } else if isLive {
+                eventCursorStore.reset()
+                eventCursor = nil
+                lastEventPollErrorCode = "EVENT_CURSOR_METADATA_MISSING"
+            }
+
             lastErrorCode = nil
+            return isLive
         } catch {
             lastErrorCode = Self.errorCode(error)
+            return false
         }
     }
 
     public func runPollingLoop() async {
         guard isConfigured else { return }
+
+        _ = await refresh()
+        var quietPolls = 0
+        var unavailablePolls = 0
+
         while !Task.isCancelled {
-            await refresh()
             do {
-                try await Task.sleep(nanoseconds: 5_000_000_000)
+                try await Task.sleep(nanoseconds: Self.eventPollIntervalNanoseconds)
             } catch {
                 return
+            }
+
+            switch await pollEventInvalidation() {
+            case .invalidated(let reason):
+                lastInvalidationReason = reason.rawValue
+                _ = await refresh()
+                quietPolls = 0
+                unavailablePolls = 0
+            case .unchanged:
+                quietPolls += 1
+                unavailablePolls = 0
+                if quietPolls >= Self.quietPollsBeforeSafetyRefresh {
+                    _ = await refresh()
+                    quietPolls = 0
+                }
+            case .unavailable:
+                unavailablePolls += 1
+                if unavailablePolls >= Self.unavailablePollsBeforeFallbackRefresh {
+                    _ = await refresh()
+                    quietPolls = 0
+                    unavailablePolls = 0
+                }
+            case .deferred:
+                continue
             }
         }
     }
 
+    private func pollEventInvalidation() async -> ObserverEventPollOutcome {
+        guard !isRefreshing else { return .deferred }
+        guard let eventClient else {
+            lastEventPollErrorCode = "EVENT_CLIENT_UNAVAILABLE"
+            return .unavailable("EVENT_CLIENT_UNAVAILABLE")
+        }
+        guard let afterID = eventCursorStore.afterID(for: projectID) else {
+            lastEventPollErrorCode = "EVENT_CURSOR_UNSEEDED"
+            return .unavailable("EVENT_CURSOR_UNSEEDED")
+        }
+
+        do {
+            let page = try await eventClient.events(
+                projectID: projectID,
+                afterID: afterID,
+                limit: 200
+            )
+            lastEventPollErrorCode = nil
+
+            switch eventCursorStore.observe(
+                projectID: page.projectID,
+                sourceInstanceID: page.sourceInstanceID,
+                eventCursor: page.eventCursor,
+                eventCount: page.events.count
+            ) {
+            case .unchanged:
+                return .unchanged
+            case .baselineMissing:
+                return .unavailable("EVENT_CURSOR_UNSEEDED")
+            case .invalidate(let reason):
+                return .invalidated(reason)
+            }
+        } catch {
+            let code = Self.readAPIErrorCode(error)
+            lastEventPollErrorCode = code
+            return .unavailable(code)
+        }
+    }
+
+    private static func makeEventClient(
+        _ configuration: ObserverTransportConfiguration
+    ) throws -> ObserverReadAPIClient {
+        let apiConfiguration = try ObserverReadAPIConfiguration(
+            baseURL: configuration.baseURL,
+            bearerToken: configuration.bearerToken,
+            requestTimeout: configuration.requestTimeout
+        )
+        return ObserverReadAPIClient(configuration: apiConfiguration)
+    }
+
+    private static func readAPIErrorCode(_ error: Error) -> String {
+        guard let api = error as? ObserverReadAPIError else {
+            return "EVENT_POLL_FAILED"
+        }
+        switch api {
+        case .invalidConfiguration(let code): return code
+        case .invalidProjectID: return "PROJECT_ID_INVALID"
+        case .invalidSessionID: return "SESSION_ID_INVALID"
+        case .invalidCursor: return "CURSOR_INVALID"
+        case .invalidLimit: return "LIMIT_INVALID"
+        case .transportContractMismatch: return "TRANSPORT_CONTRACT_MISMATCH"
+        case .authFailed: return "AUTH_FAILED"
+        case .forbidden: return "FORBIDDEN"
+        case .rateLimited: return "RATE_LIMITED"
+        case .httpStatus(let status): return "HTTP_\(status)"
+        case .responseContractMismatch: return "BODY_CONTRACT_MISMATCH"
+        case .responseScopeMismatch: return "RESPONSE_SCOPE_MISMATCH"
+        case .unavailable(let state): return "UNAVAILABLE_\(state)"
+        case .unexpectedResponse: return "UNEXPECTED_RESPONSE"
+        }
+    }
+
     private static func errorCode(_ error: Error) -> String {
+        if error is ObserverReadAPIError {
+            return readAPIErrorCode(error)
+        }
         guard let transport = error as? ObserverTransportError else {
             if let runtime = error as? ObserverRuntimeConfigurationError {
                 switch runtime {
