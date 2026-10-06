@@ -1,0 +1,42 @@
+name: V3-A4 Read Projection Contract
+
+on:
+  pull_request:
+    paths:
+      - 'Reference/V3A4/**'
+      - 'FILE_MANIFEST.txt'
+      - '.github/workflows/v3a4-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Compile projection module
+        run: python3 -m py_compile Reference/V3A4/observer_read_projection.py
+      - name: Run V3-A4 contract regression
+        working-directory: Reference/V3A4
+        run: python3 -m unittest -v test_observer_read_projection.py
+      - name: Compile Swift DTO contract
+        run: |
+          swiftc Reference/V3A4/VCWObserverProjectionDTO.swift Reference/V3A4/test_vcw_observer_projection_dto.swift -o /tmp/v3a4-dto-test
+          /tmp/v3a4-dto-test
+
+      - name: Validate contract document
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("Reference/V3A4/Observer_V3A4_Read_Projection_Contract_v1.json").read_text())
+          assert data["contract_id"] == "observer.read.v1"
+          assert data["contract_revision"] == "V3-A4-2026-10-05"
+          assert data["deployment_behavior"]["this_task_production_mutation"] is False
+          assert data["next_gate"]["production_cutover_authorized"] is False
+          print("V3-A4 contract validation PASS")
+          PY
