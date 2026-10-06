@@ -3,7 +3,7 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main, observer-b0-authority-time-20261006 ]
+    branches: [ main ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
@@ -11,6 +11,7 @@ on:
       - 'Tests/**'
       - 'Scripts/**'
       - 'Packages/**'
+      - 'Reference/**'
       - 'project.yml'
       - '.github/workflows/observer-ci.yml'
 
