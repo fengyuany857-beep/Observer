@@ -1,13 +1,13 @@
 {
   "contract_id": "observer.backend.approval-broker.v1",
   "phase": "B1",
-  "revision": "B1-2026-10-06-R1",
+  "revision": "B1-2026-10-06-R2",
   "status": "CANDIDATE_CONTRACT",
   "depends_on": [
     "observer.backend.authority-time.v1",
     "observer.b0-a6.compatibility.v1"
   ],
-  "scope": "Authoritative lifecycle for one bounded user approval request. No Session minting, credential issuance, UI rendering, job control, or production deployment.",
+  "scope": "Authoritative lifecycle for one bounded user approval request. No Session credential issuance, UI rendering, job control, or production deployment.",
   "owner": "VCW_CONTROL_PLANE_BACKEND",
   "clock_authority": "VCW_SERVER_CLOCK",
   "state_machine": {
@@ -29,7 +29,7 @@
       "CONSUMED": [],
       "INVALIDATED": [],
       "FAILED": [],
-      "OUTCOME_UNKNOWN": ["APPROVED", "DENIED", "EXPIRED", "CONSUMED", "INVALIDATED", "FAILED"]
+      "OUTCOME_UNKNOWN": ["APPROVED", "EXPIRED", "CONSUMED", "INVALIDATED", "FAILED"]
     }
   },
   "request_identity": {
@@ -68,6 +68,26 @@
       "authority_effect": "NONE"
     }
   },
+  "mint_fence": {
+    "visibility": "INTERNAL_B2_ONLY",
+    "purpose": "Reserve one approval for exactly one Session mint transaction without falsely marking it CONSUMED before commit.",
+    "fields": [
+      "mint_attempt_id",
+      "session_ref",
+      "fence_acquired_at"
+    ],
+    "rules": [
+      "fence may be acquired only while state=APPROVED and server_now < expires_at",
+      "one approval has at most one active fence",
+      "same fence identity is idempotent",
+      "different mint/session identity while fenced is rejected",
+      "fence acquisition does not equal Session mint and does not equal CONSUMED",
+      "session commit must have committed_at < approval.expires_at",
+      "finalization/readback may occur after approval.expires_at if the same fenced mint was authoritatively committed before expiry",
+      "if expiry is reached while a fence exists and commit truth is not known, state becomes OUTCOME_UNKNOWN rather than EXPIRED",
+      "no second mint is allowed while fence outcome is unknown"
+    ]
+  },
   "operations": {
     "create_request": {
       "input": [
@@ -93,7 +113,7 @@
     },
     "get_request": {
       "input": ["approval_id"],
-      "rule": "Read authoritative store and apply expiry before returning state."
+      "rule": "Read authoritative store and apply expiry/reconciliation gate before returning state."
     },
     "list_pending": {
       "rule": "Read authoritative store; expired rows cannot be returned as PENDING."
@@ -121,25 +141,39 @@
         "different decision after terminal decision is rejected"
       ]
     },
-    "consume_for_session": {
+    "acquire_mint_fence": {
       "visibility": "INTERNAL_B2_ONLY",
       "preconditions": [
         "current state is APPROVED",
         "server_now < expires_at",
-        "session mint authority chain is unique for approval_id"
+        "no different active mint fence exists"
       ],
       "postconditions": [
-        "CONSUMED only after authoritative Session mint commit is proven",
-        "one approval cannot authorize two Sessions",
-        "mint failure before authoritative commit leaves approval APPROVED unless separately invalidated/expired",
-        "ambiguous cross-store outcome enters reconciliation; never assume CONSUMED"
+        "fence identity is durably bound to approval_id",
+        "state remains APPROVED",
+        "state_version increments for first fence acquisition"
+      ]
+    },
+    "finalize_session_mint": {
+      "visibility": "INTERNAL_B2_ONLY",
+      "preconditions": [
+        "same mint fence identity exists",
+        "authoritative mint outcome is supplied or outcome is explicitly UNKNOWN"
+      ],
+      "postconditions": [
+        "proven commit with committed_at < expires_at -> CONSUMED",
+        "proven no-commit before expiry -> APPROVED with fence released",
+        "proven no-commit after expiry -> EXPIRED with fence released",
+        "unknown outcome -> OUTCOME_UNKNOWN and fence retained",
+        "commit at or after expires_at is not a valid approval-backed mint",
+        "one approval cannot authorize two Sessions"
       ]
     },
     "expire": {
-      "rule": "PENDING or APPROVED becomes EXPIRED when server_now >= expires_at and no authoritative consume commit exists."
+      "rule": "PENDING or unfenced APPROVED becomes EXPIRED when server_now >= expires_at. Fenced APPROVED with unknown mint truth becomes OUTCOME_UNKNOWN."
     },
     "invalidate": {
-      "rule": "Explicit authority revocation or scope/target invalidation may move reusable states to INVALIDATED with reason evidence."
+      "rule": "Explicit authority revocation or scope/target invalidation may move reusable unfenced states to INVALIDATED with reason evidence; fenced/unknown mint requires reconciliation first."
     }
   },
   "api_candidate": {
@@ -150,7 +184,8 @@
       "POST /observer/control/v1/approvals/{approval_id}/decision"
     ],
     "internal_surface": [
-      "consume_for_session(approval_id, mint_attempt_id, session_ref)"
+      "acquire_mint_fence(approval_id, mint_attempt_id, session_ref, expected_state_version)",
+      "finalize_session_mint(approval_id, mint_attempt_id, session_ref, commit_state, committed_at)"
     ],
     "note": "Candidate paths only. They are not claims about current VCW production endpoints."
   },
@@ -166,7 +201,10 @@
     "CACHED_APPROVAL_CANNOT_AUTHORIZE_SESSION",
     "DENIED_EXPIRED_CONSUMED_INVALIDATED_FAILED_NEVER_RETURN_TO_PENDING",
     "SESSION_MINT_FAILURE_DOES_NOT_SILENTLY_CONSUME_APPROVAL",
-    "AMBIGUOUS_MINT_RESULT_MUST_RECONCILE_BEFORE_RETRY"
+    "AMBIGUOUS_MINT_RESULT_MUST_RECONCILE_BEFORE_RETRY",
+    "MINT_FENCE_DOES_NOT_EQUAL_CONSUMED",
+    "MINT_COMMIT_MUST_PRECEDE_APPROVAL_EXPIRY",
+    "FINALIZE_AFTER_EXPIRY_MAY_CONSUME_ONLY_IF_SAME_FENCED_COMMIT_OCCURRED_BEFORE_EXPIRY"
   ],
   "manual_fallback": {
     "legacy_grant": "MANUAL_EMERGENCY_OR_COMPATIBILITY_FALLBACK",
