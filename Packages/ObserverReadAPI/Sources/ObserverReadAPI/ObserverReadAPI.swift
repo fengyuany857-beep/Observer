@@ -10,6 +10,7 @@ public enum ObserverReadAPIError: Error, Sendable, Equatable {
     case invalidConfiguration(String)
     case invalidProjectID
     case invalidSessionID
+    case invalidCursor
     case invalidLimit
     case transportContractMismatch(expected: String, actual: String?)
     case authFailed
@@ -75,6 +76,116 @@ public struct ObserverReadJobsPage: Sendable, Equatable {
     public let sessionID: String?
     public let availability: String
     public let jobs: [ObserverReadJob]
+}
+
+public struct ObserverReadEvent: Sendable, Equatable, Identifiable {
+    public let eventID: Int
+    public let eventIdentity: String
+    public let eventType: String
+    public let createdAt: Date
+    public let sessionID: String?
+    public let projectID: String?
+    public let source: String
+    public let authoritative: Bool
+    public let payloadSummary: String
+
+    public var id: Int { eventID }
+
+    public init(
+        eventID: Int,
+        eventIdentity: String,
+        eventType: String,
+        createdAt: Date,
+        sessionID: String?,
+        projectID: String?,
+        source: String,
+        authoritative: Bool,
+        payloadSummary: String
+    ) {
+        self.eventID = eventID
+        self.eventIdentity = eventIdentity
+        self.eventType = eventType
+        self.createdAt = createdAt
+        self.sessionID = sessionID
+        self.projectID = projectID
+        self.source = source
+        self.authoritative = authoritative
+        self.payloadSummary = payloadSummary
+    }
+}
+
+public struct ObserverReadEventsPage: Sendable, Equatable {
+    public let sourceInstanceID: String
+    public let projectID: String
+    public let eventCursor: Int
+    public let events: [ObserverReadEvent]
+
+    public init(
+        sourceInstanceID: String,
+        projectID: String,
+        eventCursor: Int,
+        events: [ObserverReadEvent]
+    ) {
+        self.sourceInstanceID = sourceInstanceID
+        self.projectID = projectID
+        self.eventCursor = eventCursor
+        self.events = events
+    }
+
+    public func eventsForSession(_ sessionID: String) -> [ObserverReadEvent] {
+        events.filter { $0.sessionID == sessionID }
+    }
+}
+
+public struct ObserverReadEffect: Sendable, Equatable, Identifiable {
+    public let effectID: String
+    public let taskID: String
+    public let projectID: String
+    public let state: String
+    public let stateKnown: Bool
+    public let generation: Int
+    public let receiptSummary: String?
+    public let lastErrorCode: String?
+    public let createdAtRaw: String
+    public let updatedAtRaw: String
+
+    public var id: String { effectID }
+
+    public init(
+        effectID: String,
+        taskID: String,
+        projectID: String,
+        state: String,
+        stateKnown: Bool,
+        generation: Int,
+        receiptSummary: String?,
+        lastErrorCode: String?,
+        createdAtRaw: String,
+        updatedAtRaw: String
+    ) {
+        self.effectID = effectID
+        self.taskID = taskID
+        self.projectID = projectID
+        self.state = state
+        self.stateKnown = stateKnown
+        self.generation = generation
+        self.receiptSummary = receiptSummary
+        self.lastErrorCode = lastErrorCode
+        self.createdAtRaw = createdAtRaw
+        self.updatedAtRaw = updatedAtRaw
+    }
+}
+
+public struct ObserverReadEffectsPage: Sendable, Equatable {
+    public let projectID: String
+    public let taskID: String?
+    public let effects: [ObserverReadEffect]
+
+    public init(projectID: String, taskID: String?, effects: [ObserverReadEffect]) {
+        self.projectID = projectID
+        self.taskID = taskID
+        self.effects = effects
+    }
 }
 
 final class ObserverNoRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
@@ -172,12 +283,7 @@ public struct ObserverReadAPIClient: Sendable {
         sessionID: String? = nil,
         limit: Int = 100
     ) async throws -> ObserverReadJobsPage {
-        guard projectID.range(
-            of: Self.projectPattern,
-            options: .regularExpression
-        ) != nil else {
-            throw ObserverReadAPIError.invalidProjectID
-        }
+        try Self.validateProjectID(projectID)
         if let sessionID,
            sessionID.range(of: Self.sessionPattern, options: .regularExpression) == nil {
             throw ObserverReadAPIError.invalidSessionID
@@ -231,5 +337,121 @@ public struct ObserverReadAPIClient: Sendable {
                 )
             }
         )
+    }
+
+    public func events(
+        projectID: String,
+        afterID: Int = 0,
+        limit: Int = 200
+    ) async throws -> ObserverReadEventsPage {
+        try Self.validateProjectID(projectID)
+        guard afterID >= 0 else {
+            throw ObserverReadAPIError.invalidCursor
+        }
+        guard (1...200).contains(limit) else {
+            throw ObserverReadAPIError.invalidLimit
+        }
+
+        let output = try await client.getEvents(
+            path: .init(projectId: projectID),
+            query: .init(afterId: afterID, limit: limit)
+        )
+        let payload: Components.Schemas.ObserverEventsEnvelope
+        do {
+            payload = try output.ok.body.json
+        } catch {
+            throw ObserverReadAPIError.unexpectedResponse
+        }
+
+        guard payload.contractVersion == "observer.events.v1" else {
+            throw ObserverReadAPIError.responseContractMismatch(
+                expected: "observer.events.v1",
+                actual: payload.contractVersion
+            )
+        }
+        guard payload.projectId == projectID,
+              payload.events.allSatisfy({ $0.projectId == nil || $0.projectId == projectID }) else {
+            throw ObserverReadAPIError.responseScopeMismatch
+        }
+
+        return ObserverReadEventsPage(
+            sourceInstanceID: payload.sourceInstanceId,
+            projectID: payload.projectId,
+            eventCursor: payload.eventCursor,
+            events: payload.events.map { row in
+                ObserverReadEvent(
+                    eventID: row.eventId,
+                    eventIdentity: row.eventIdentity,
+                    eventType: row.eventType,
+                    createdAt: Date(timeIntervalSince1970: row.createdAt),
+                    sessionID: row.sessionId,
+                    projectID: row.projectId,
+                    source: row.source,
+                    authoritative: row.authoritative,
+                    payloadSummary: String(describing: row.payload)
+                )
+            }
+        )
+    }
+
+    public func effects(
+        projectID: String,
+        taskID: String? = nil,
+        limit: Int = 100
+    ) async throws -> ObserverReadEffectsPage {
+        try Self.validateProjectID(projectID)
+        guard (1...100).contains(limit) else {
+            throw ObserverReadAPIError.invalidLimit
+        }
+
+        let output = try await client.getEffects(
+            path: .init(projectId: projectID),
+            query: .init(taskId: taskID, limit: limit)
+        )
+        let payload: Components.Schemas.ObserverEffectsEnvelope
+        do {
+            payload = try output.ok.body.json
+        } catch {
+            throw ObserverReadAPIError.unexpectedResponse
+        }
+
+        guard payload.contractVersion == "observer.effects.v1" else {
+            throw ObserverReadAPIError.responseContractMismatch(
+                expected: "observer.effects.v1",
+                actual: payload.contractVersion
+            )
+        }
+        guard payload.projectId == projectID,
+              (taskID == nil || payload.taskId == taskID),
+              payload.effects.allSatisfy({ effect in
+                  effect.projectId == projectID && (taskID == nil || effect.taskId == taskID)
+              }) else {
+            throw ObserverReadAPIError.responseScopeMismatch
+        }
+
+        return ObserverReadEffectsPage(
+            projectID: payload.projectId,
+            taskID: payload.taskId,
+            effects: payload.effects.map { row in
+                ObserverReadEffect(
+                    effectID: row.effectId,
+                    taskID: row.taskId,
+                    projectID: row.projectId,
+                    state: row.state,
+                    stateKnown: row.stateKnown,
+                    generation: row.generation,
+                    receiptSummary: row.receipt.map { String(describing: $0) },
+                    lastErrorCode: row.lastErrorCode,
+                    createdAtRaw: row.createdAt,
+                    updatedAtRaw: row.updatedAt
+                )
+            }
+        )
+    }
+
+    private static func validateProjectID(_ projectID: String) throws {
+        guard projectID.range(of: projectPattern, options: .regularExpression) != nil else {
+            throw ObserverReadAPIError.invalidProjectID
+        }
     }
 }
