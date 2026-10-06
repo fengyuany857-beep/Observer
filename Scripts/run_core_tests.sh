@@ -28,3 +28,10 @@ swiftc \
   -framework Security \
   -o build/core-tests/ObserverRuntimeConfigurationTests
 build/core-tests/ObserverRuntimeConfigurationTests | tee -a Artifacts/Observer-Core-Test-Report.txt
+
+swiftc \
+  Sources/Domain/ObserverDomain.swift \
+  Sources/Domain/ObserverCurrentOperationOverlay.swift \
+  Tests/ObserverCurrentOperationOverlayTests.swift \
+  -o build/core-tests/ObserverCurrentOperationOverlayTests
+build/core-tests/ObserverCurrentOperationOverlayTests | tee -a Artifacts/Observer-Core-Test-Report.txt
