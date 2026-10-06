@@ -101,6 +101,49 @@ final class ObserverReadAPITests: XCTestCase {
         }
     }
 
+    func testOperationsPageResolvesExactSessionOnly() {
+        let operation = ObserverReadOperation(
+            operationID: "op-1",
+            sessionID: "session-a",
+            projectID: "project-a",
+            kind: "TOOL",
+            name: "Run shell command",
+            startedAt: Date(timeIntervalSince1970: 10),
+            currentness: "CURRENT",
+            authority: "GATEWAY_IN_FLIGHT_CALL",
+            freshness: "CURRENT_PROCESS"
+        )
+        let page = ObserverReadOperationsPage(
+            sourceInstanceID: "source-1",
+            authorityInstanceID: "opreg-1",
+            projectID: "project-a",
+            sessionID: nil,
+            availability: "AVAILABLE",
+            observedAt: Date(timeIntervalSince1970: 11),
+            operations: [operation]
+        )
+
+        XCTAssertEqual(page.currentOperation(for: "session-a")?.operationID, "op-1")
+        XCTAssertNil(page.currentOperation(for: "session-b"))
+    }
+
+    func testOperationsRejectInvalidSessionBeforeNetwork() async throws {
+        let configuration = try ObserverReadAPIConfiguration(
+            baseURL: URL(string: "https://observer.invalid")!,
+            bearerToken: "token"
+        )
+        let client = ObserverReadAPIClient(configuration: configuration)
+        do {
+            _ = try await client.operations(
+                projectID: "project-a",
+                sessionID: "bad session"
+            )
+            XCTFail("invalid session must be rejected")
+        } catch let error as ObserverReadAPIError {
+            XCTAssertEqual(error, .invalidSessionID)
+        }
+    }
+
     func testEffectsRejectOversizedLimitBeforeNetwork() async throws {
         let configuration = try ObserverReadAPIConfiguration(
             baseURL: URL(string: "https://observer.invalid")!,
