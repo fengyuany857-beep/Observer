@@ -1,0 +1,189 @@
+{
+  "contract_id": "observer.backend.authority-time.v1",
+  "phase": "B0",
+  "revision": "B0-2026-10-06-R1",
+  "status": "CANDIDATE_CONTRACT",
+  "scope": "Authority identity, lease/time semantics, deadline calculation, policy evaluation, and cross-plane invariants. No production mutation, job execution, UI behavior, or logout implementation.",
+  "clock": {
+    "authority": "VCW_SERVER_CLOCK",
+    "storage_basis": "UTC_INSTANT",
+    "client_clock_role": "DISPLAY_ONLY",
+    "must_not": [
+      "CLIENT_CLOCK_DECIDES_AUTHORITY",
+      "APP_CLOCK_EXTENDS_LEASE",
+      "DEVICE_TIME_MUTATION_CHANGES_SERVER_DEADLINE"
+    ]
+  },
+  "objects": {
+    "grant": {
+      "purpose": "Legacy one-time compatibility/emergency entry credential.",
+      "states": [
+        "ISSUED",
+        "CONSUMED",
+        "EXPIRED",
+        "REVOKED"
+      ],
+      "terminal_states": [
+        "CONSUMED",
+        "EXPIRED",
+        "REVOKED"
+      ],
+      "rules": [
+        "CONSUME_AT_MOST_ONCE",
+        "CONSUMED_NEVER_RETURNS_TO_ISSUED",
+        "GRANT_IS_NOT_SESSION",
+        "GRANT_IS_NOT_APPROVAL"
+      ]
+    },
+    "approval": {
+      "purpose": "User decision authorizing one bounded access attempt.",
+      "states": [
+        "PENDING",
+        "APPROVED",
+        "DENIED",
+        "EXPIRED",
+        "CONSUMED",
+        "INVALIDATED",
+        "FAILED",
+        "OUTCOME_UNKNOWN"
+      ],
+      "terminal_or_non_reusable_states": [
+        "DENIED",
+        "EXPIRED",
+        "CONSUMED",
+        "INVALIDATED",
+        "FAILED"
+      ],
+      "rules": [
+        "APPROVAL_TTL_IS_INDEPENDENT",
+        "APPROVED_DOES_NOT_EQUAL_SESSION_MINTED",
+        "APPROVAL_CONSUME_AT_MOST_ONCE",
+        "ONLY_VALID_APPROVED_UNCONSUMED_APPROVAL_CAN_AUTHORIZE_SESSION_MINT",
+        "LOST_MINT_READBACK_MAY_ENTER_OUTCOME_UNKNOWN"
+      ]
+    },
+    "gpt_wait_window": {
+      "purpose": "Bounded time the current GPT turn waits/polls for an approval result.",
+      "default_seconds": 30,
+      "authority_effect": "NONE",
+      "rules": [
+        "WAIT_TIMEOUT_DOES_NOT_EXPIRE_APPROVAL",
+        "WAIT_TIMEOUT_DOES_NOT_DENY_APPROVAL",
+        "WAIT_TIMEOUT_DOES_NOT_REVOKE_SESSION",
+        "A_LATER_GPT_TURN_MAY_REOBSERVE_STILL_VALID_APPROVAL"
+      ]
+    },
+    "session_lease": {
+      "purpose": "Authoritative permission window for one VCW session.",
+      "hard_ttl_seconds": 1500,
+      "hard_expires_formula": "authorized_at + 1500s",
+      "renewal": "NO_SILENT_RENEWAL",
+      "authority_states": [
+        "MINTED",
+        "ACTIVE",
+        "EXPIRED",
+        "REVOKED",
+        "OUTCOME_UNKNOWN"
+      ],
+      "rules": [
+        "EXPIRED_NEVER_RETURNS_ACTIVE",
+        "REVOKED_NEVER_RETURNS_ACTIVE",
+        "REAUTH_CREATES_NEW_AUTHORITY_CHAIN",
+        "SESSION_ACTIVE_DOES_NOT_EQUAL_JOB_RUNNING",
+        "SESSION_ACTIVE_DOES_NOT_EQUAL_OPERATION_CURRENT",
+        "SESSION_EXPIRY_DOES_NOT_EQUAL_JOB_FINISHED"
+      ]
+    },
+    "credential": {
+      "purpose": "Opaque secret allowing an authorized caller to exercise a Session lease.",
+      "visibility": "SECRET_REF_ONLY",
+      "max_lifetime_rule": "credential_expires_at <= session_hard_expires_at",
+      "rules": [
+        "INVALID_WHEN_SESSION_EXPIRED",
+        "INVALID_WHEN_SESSION_REVOKED",
+        "NEVER_PROJECT_RAW_CREDENTIAL_TO_OBSERVER",
+        "NEVER_PERSIST_RAW_CREDENTIAL_IN_CHECKPOINT_LOG_EVENT_OR_ERROR"
+      ]
+    },
+    "daily_close_policy": {
+      "purpose": "Daily save/exit/logout request; orthogonal to Session authority state.",
+      "local_time": "23:30",
+      "timezone": "REQUIRED_CONFIGURATION",
+      "policy_states": [
+        "NORMAL",
+        "CLOSE_REQUIRED",
+        "ACKNOWLEDGED"
+      ],
+      "rules": [
+        "DAILY_CLOSE_REQUIRED_IS_NOT_SESSION_EXPIRED",
+        "DAILY_CLOSE_REQUIRED_IS_NOT_LOGGED_OUT",
+        "DAILY_CLOSE_POLICY_DOES_NOT_EXTEND_SESSION_TTL",
+        "DOWNSTREAM_COORDINATOR_SHOULD_NOT_START_NEW_WORK_WHEN_CLOSE_REQUIRED",
+        "HARD_SESSION_EXPIRY_REMAINS_ENFORCEABLE_WITH_OR_WITHOUT_GPT_OR_APP"
+      ]
+    }
+  },
+  "derived_projection": {
+    "authority_state": "Derived only from current authoritative grant/approval/session/credential evidence.",
+    "effective_deadline": "For Session authority, session_hard_expires_at. Daily close is a separate policy timestamp and must not be folded into Session expiry.",
+    "remaining_seconds": "max(0, session_hard_expires_at - server_now)",
+    "close_required": "daily_close_policy == CLOSE_REQUIRED OR downstream lifecycle policy requests close",
+    "close_reason": [
+      "DAILY_POLICY",
+      "SESSION_EXPIRY_APPROACHING",
+      "EXPLICIT_REVOKE",
+      "UNKNOWN"
+    ],
+    "can_start_new_job": "false if Session lease not ACTIVE; downstream B7 may also deny when DAILY CLOSE_REQUIRED",
+    "can_issue_effect": "false if Session lease not ACTIVE or credential not valid"
+  },
+  "cross_plane_invariants": [
+    "APPROVAL_TTL != GPT_WAIT_WINDOW",
+    "GPT_WAIT_WINDOW != SESSION_TTL",
+    "SESSION_TTL != DAILY_CLOSE_REMINDER",
+    "CREDENTIAL_LIFETIME != JOB_LIFETIME",
+    "SESSION_LIFETIME != JOB_LIFETIME",
+    "SESSION_LIFETIME != OPERATION_LIFETIME",
+    "APPROVED != SESSION_MINTED",
+    "SESSION_MINTED != PROJECT_BOUND",
+    "SESSION_REVOKED != RESOURCE_CLEANUP_VERIFIED",
+    "EVENT != AUTHORITY_TRUTH",
+    "CACHED_STATE_CANNOT_CREATE_FRESH_AUTHORITY"
+  ],
+  "a6_hard_boundaries": {
+    "hierarchy": "Project -> Session -> Job -> Operation",
+    "operation_current_definition": "Gateway is presently waiting for the real BackendProxy invocation to return.",
+    "must_not": [
+      "SESSION_ACTIVE_SYNTHESIZES_CURRENT_OPERATION",
+      "JOB_RUNNING_SYNTHESIZES_CURRENT_OPERATION",
+      "CURRENT_OPERATION_DISAPPEARS_IMPLIES_JOB_FINISHED",
+      "EVENT_FAILURE_OVERRIDES_AUTHORITATIVE_JOB_OR_SESSION_STATE"
+    ]
+  },
+  "configuration": {
+    "daily_close_timezone": {
+      "state": "UNRESOLVED_REQUIRED",
+      "must_be_server_configured": true
+    },
+    "session_expiry_warning_lead_seconds": {
+      "state": "UNRESOLVED_OPTIONAL",
+      "owner_phase": "B2_B3"
+    },
+    "approval_ttl_seconds": {
+      "state": "UNRESOLVED_REQUIRED",
+      "owner_phase": "B1"
+    },
+    "legacy_grant_ttl_seconds": {
+      "state": "EXISTING_RUNTIME_TO_REUSE_NOT_REDEFINE_IN_B0"
+    }
+  },
+  "out_of_scope": [
+    "Approval transport/API implementation",
+    "Session mint/revoke implementation",
+    "Job stop/drain semantics",
+    "Project lock/queue cleanup implementation",
+    "Observer UI",
+    "Production deployment",
+    "VCW production mutation"
+  ]
+}
