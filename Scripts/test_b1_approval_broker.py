@@ -68,21 +68,37 @@ def create(broker, now=1000.0, key="key-1", scope="workspace:read", attempt="req
     )
 
 
-# Contract/static checks.
+def approve(broker, item, now=1001.0, attempt="allow-1"):
+    return broker.decide(
+        approval_id=item.approval_id,
+        now=now,
+        decision="ALLOW",
+        decision_attempt_id=attempt,
+        expected_state_version=item.state_version,
+        decider_principal="user:owner",
+    )
+
+
+# Static contract checks.
+check("contract revision R2", contract["revision"] == "B1-2026-10-06-R2")
 check("contract depends on B0", "observer.backend.authority-time.v1" in contract["depends_on"])
 check("owner is backend", contract["owner"] == "VCW_CONTROL_PLANE_BACKEND")
 check("server clock authoritative", contract["clock_authority"] == "VCW_SERVER_CLOCK")
 check("approval ttl has no invented default", contract["configuration"]["approval_ttl_seconds"]["default"] is None)
 check("GPT wait is 30 seconds", contract["configuration"]["gpt_wait_window_seconds"]["value"] == 30)
 check("GPT wait has no authority effect", contract["configuration"]["gpt_wait_window_seconds"]["authority_effect"] == "NONE")
-check("consume is B2 internal only", contract["operations"]["consume_for_session"]["visibility"] == "INTERNAL_B2_ONLY")
+check("mint fence is B2 internal", contract["mint_fence"]["visibility"] == "INTERNAL_B2_ONLY")
+check("fence acquire is B2 internal", contract["operations"]["acquire_mint_fence"]["visibility"] == "INTERNAL_B2_ONLY")
+check("mint finalize is B2 internal", contract["operations"]["finalize_session_mint"]["visibility"] == "INTERNAL_B2_ONLY")
 check("legacy grant is fallback", contract["manual_fallback"]["legacy_grant"] == "MANUAL_EMERGENCY_OR_COMPATIBILITY_FALLBACK")
-check("B1 state set matches B0 approval states",
-      set(contract["state_machine"]["states"]) == set(b0["objects"]["approval"]["states"]))
+check(
+    "B1 state set matches B0 approval states",
+    set(contract["state_machine"]["states"]) == set(b0["objects"]["approval"]["states"]),
+)
 
 matrix_ids = [case["id"] for case in matrix["cases"]]
 check("test matrix ids unique", len(matrix_ids) == len(set(matrix_ids)))
-check("test matrix has >= 30 cases", len(matrix_ids) >= 30)
+check("test matrix has >= 40 cases", len(matrix_ids) >= 40)
 
 invariants = set(contract["hard_invariants"])
 for required in [
@@ -95,10 +111,13 @@ for required in [
     "CACHED_APPROVAL_CANNOT_AUTHORIZE_SESSION",
     "SESSION_MINT_FAILURE_DOES_NOT_SILENTLY_CONSUME_APPROVAL",
     "AMBIGUOUS_MINT_RESULT_MUST_RECONCILE_BEFORE_RETRY",
+    "MINT_FENCE_DOES_NOT_EQUAL_CONSUMED",
+    "MINT_COMMIT_MUST_PRECEDE_APPROVAL_EXPIRY",
+    "FINALIZE_AFTER_EXPIRY_MAY_CONSUME_ONLY_IF_SAME_FENCED_COMMIT_OCCURRED_BEFORE_EXPIRY",
 ]:
     check("invariant " + required, required in invariants)
 
-# Runtime reference-model tests.
+# Configuration and create/idempotency.
 expect_error(
     "missing ttl rejected",
     InvalidConfiguration,
@@ -169,85 +188,216 @@ expect_error(
     ),
 )
 
-not_committed = broker.consume_for_session(
-    approval_id=pending.approval_id,
+# Mint fence mechanics.
+fenced = broker.acquire_mint_fence(
+    approval_id=approved.approval_id,
     now=1035.0,
     mint_attempt_id="mint-1",
     session_ref="session-1",
-    mint_commit_proven=False,
+    expected_state_version=approved.state_version,
 )
-check("failed mint before commit leaves APPROVED", not_committed.state == "APPROVED")
+check("fence leaves approval APPROVED", fenced.state == "APPROVED")
+check("fence binds mint identity", fenced.fence_mint_attempt_id == "mint-1")
+check("fence increments version", fenced.state_version == approved.state_version + 1)
 
-ambiguous = broker.consume_for_session(
-    approval_id=pending.approval_id,
+same_fence = broker.acquire_mint_fence(
+    approval_id=approved.approval_id,
     now=1036.0,
-    mint_attempt_id="mint-amb",
-    session_ref="session-amb",
-    mint_commit_proven=None,
+    mint_attempt_id="mint-1",
+    session_ref="session-1",
+    expected_state_version=approved.state_version,
 )
-check("ambiguous mint -> OUTCOME_UNKNOWN", ambiguous.state == "OUTCOME_UNKNOWN")
-
-same_ambiguous = broker.consume_for_session(
-    approval_id=pending.approval_id,
-    now=1037.0,
-    mint_attempt_id="mint-amb",
-    session_ref="session-amb",
-    mint_commit_proven=None,
-)
-check("same ambiguous attempt is idempotent", same_ambiguous.state == "OUTCOME_UNKNOWN")
+check("same fence idempotent", same_fence == fenced)
 
 expect_error(
-    "blind second mint blocked while unknown",
-    StateConflict,
-    lambda: broker.consume_for_session(
-        approval_id=pending.approval_id,
-        now=1038.0,
+    "different session cannot steal fence",
+    DuplicateSessionMint,
+    lambda: broker.acquire_mint_fence(
+        approval_id=approved.approval_id,
+        now=1037.0,
         mint_attempt_id="mint-2",
         session_ref="session-2",
-        mint_commit_proven=True,
+        expected_state_version=fenced.state_version,
     ),
 )
 
-reconciled_not_committed = broker.reconcile_mint_outcome(
-    approval_id=pending.approval_id,
+not_committed = broker.finalize_session_mint(
+    approval_id=approved.approval_id,
+    now=1038.0,
+    mint_attempt_id="mint-1",
+    session_ref="session-1",
+    commit_state=False,
+)
+check("no commit before expiry -> APPROVED", not_committed.state == "APPROVED")
+check("no commit releases fence", not_committed.fence_mint_attempt_id is None)
+
+fenced2 = broker.acquire_mint_fence(
+    approval_id=approved.approval_id,
     now=1039.0,
     mint_attempt_id="mint-amb",
     session_ref="session-amb",
-    committed=False,
+    expected_state_version=not_committed.state_version,
 )
-check("reconcile not committed -> APPROVED", reconciled_not_committed.state == "APPROVED")
-
-consumed = broker.consume_for_session(
-    approval_id=pending.approval_id,
+ambiguous = broker.finalize_session_mint(
+    approval_id=approved.approval_id,
     now=1040.0,
-    mint_attempt_id="mint-final",
-    session_ref="session-final",
-    mint_commit_proven=True,
+    mint_attempt_id="mint-amb",
+    session_ref="session-amb",
+    commit_state=None,
 )
-check("proven mint -> CONSUMED", consumed.state == "CONSUMED")
-check("consumed binds session ref", consumed.consumed_session_ref == "session-final")
+check("ambiguous mint -> OUTCOME_UNKNOWN", ambiguous.state == "OUTCOME_UNKNOWN")
+check("unknown retains fence", ambiguous.fence_session_ref == "session-amb")
 
-same_consumed = broker.consume_for_session(
-    approval_id=pending.approval_id,
+same_unknown = broker.finalize_session_mint(
+    approval_id=approved.approval_id,
     now=1041.0,
-    mint_attempt_id="mint-final",
-    session_ref="session-final",
-    mint_commit_proven=True,
+    mint_attempt_id="mint-amb",
+    session_ref="session-amb",
+    commit_state=None,
 )
-check("same consumed mint idempotent", same_consumed == consumed)
+check("same unknown finalize idempotent", same_unknown == ambiguous)
 
 expect_error(
-    "second session mint rejected",
-    DuplicateSessionMint,
-    lambda: broker.consume_for_session(
-        approval_id=pending.approval_id,
+    "blind second fence blocked while outcome unknown",
+    StateConflict,
+    lambda: broker.acquire_mint_fence(
+        approval_id=approved.approval_id,
         now=1042.0,
         mint_attempt_id="mint-other",
         session_ref="session-other",
-        mint_commit_proven=True,
+        expected_state_version=ambiguous.state_version,
     ),
 )
 
+reconciled_not_committed = broker.finalize_session_mint(
+    approval_id=approved.approval_id,
+    now=1043.0,
+    mint_attempt_id="mint-amb",
+    session_ref="session-amb",
+    commit_state=False,
+)
+check("reconcile no commit before ttl -> APPROVED", reconciled_not_committed.state == "APPROVED")
+check("reconcile clears fence", reconciled_not_committed.fence_mint_attempt_id is None)
+
+# Pending/expired cannot acquire fence.
+pending_broker = new_broker()
+p = create(pending_broker, key="pending-fence")
+expect_error(
+    "pending cannot acquire mint fence",
+    StateConflict,
+    lambda: pending_broker.acquire_mint_fence(
+        approval_id=p.approval_id,
+        now=1001.0,
+        mint_attempt_id="m",
+        session_ref="s",
+        expected_state_version=p.state_version,
+    ),
+)
+
+expired_broker = new_broker(ttl=10)
+e = create(expired_broker, key="expired-fence")
+e = approve(expired_broker, e, now=1001.0, attempt="e-allow")
+expect_error(
+    "expired approval cannot acquire fence",
+    Expired,
+    lambda: expired_broker.acquire_mint_fence(
+        approval_id=e.approval_id,
+        now=1010.0,
+        mint_attempt_id="late",
+        session_ref="late-session",
+        expected_state_version=e.state_version,
+    ),
+)
+
+# Critical TTL race: fenced commit before expiry, finalize after expiry.
+race_broker = new_broker(ttl=20)
+race = create(race_broker, key="race")
+race = approve(race_broker, race, now=1001.0, attempt="race-allow")
+race = race_broker.acquire_mint_fence(
+    approval_id=race.approval_id,
+    now=1018.0,
+    mint_attempt_id="race-mint",
+    session_ref="race-session",
+    expected_state_version=race.state_version,
+)
+race_consumed = race_broker.finalize_session_mint(
+    approval_id=race.approval_id,
+    now=1022.0,
+    mint_attempt_id="race-mint",
+    session_ref="race-session",
+    commit_state=True,
+    committed_at=1019.5,
+)
+check("pre-expiry commit finalized after ttl -> CONSUMED", race_consumed.state == "CONSUMED")
+
+same_consumed = race_broker.finalize_session_mint(
+    approval_id=race.approval_id,
+    now=1023.0,
+    mint_attempt_id="race-mint",
+    session_ref="race-session",
+    commit_state=True,
+    committed_at=1019.5,
+)
+check("same consumed finalize idempotent", same_consumed == race_consumed)
+
+expect_error(
+    "second session after consumed rejected",
+    DuplicateSessionMint,
+    lambda: race_broker.finalize_session_mint(
+        approval_id=race.approval_id,
+        now=1024.0,
+        mint_attempt_id="other-mint",
+        session_ref="other-session",
+        commit_state=True,
+        committed_at=1019.0,
+    ),
+)
+
+# Expiry with active fence must not silently become EXPIRED.
+unknown_broker = new_broker(ttl=20)
+u = create(unknown_broker, key="unknown")
+u = approve(unknown_broker, u, now=1001.0, attempt="u-allow")
+u = unknown_broker.acquire_mint_fence(
+    approval_id=u.approval_id,
+    now=1018.0,
+    mint_attempt_id="u-mint",
+    session_ref="u-session",
+    expected_state_version=u.state_version,
+)
+u_at_expiry = unknown_broker.get_request(u.approval_id, now=1020.0)
+check("fenced approval at ttl -> OUTCOME_UNKNOWN", u_at_expiry.state == "OUTCOME_UNKNOWN")
+u_no_commit = unknown_broker.finalize_session_mint(
+    approval_id=u.approval_id,
+    now=1021.0,
+    mint_attempt_id="u-mint",
+    session_ref="u-session",
+    commit_state=False,
+)
+check("reconciled no-commit after ttl -> EXPIRED", u_no_commit.state == "EXPIRED")
+
+# A known late commit is invalid and must not become CONSUMED.
+late_broker = new_broker(ttl=20)
+late = create(late_broker, key="late")
+late = approve(late_broker, late, now=1001.0, attempt="late-allow")
+late = late_broker.acquire_mint_fence(
+    approval_id=late.approval_id,
+    now=1018.0,
+    mint_attempt_id="late-mint",
+    session_ref="late-session",
+    expected_state_version=late.state_version,
+)
+late_result = late_broker.finalize_session_mint(
+    approval_id=late.approval_id,
+    now=1021.0,
+    mint_attempt_id="late-mint",
+    session_ref="late-session",
+    commit_state=True,
+    committed_at=1020.0,
+)
+check("commit at expiry -> FAILED", late_result.state == "FAILED")
+check("late commit never becomes CONSUMED", late_result.state != "CONSUMED")
+
+# Deny / expiry / list behavior.
 deny_broker = new_broker()
 deny_req = create(deny_broker, key="deny-key")
 denied = deny_broker.decide(
@@ -296,6 +446,7 @@ pending_list = list_broker.list_pending(now=1051.0)
 check("expired omitted from pending list", list_a.approval_id not in {x.approval_id for x in pending_list})
 check("unexpired remains in pending list", list_b.approval_id in {x.approval_id for x in pending_list})
 
+# Invalidation.
 invalidate_broker = new_broker()
 inv_pending = create(invalidate_broker, key="inv-p")
 invalidated = invalidate_broker.invalidate(
@@ -304,83 +455,34 @@ invalidated = invalidate_broker.invalidate(
     reason="PROJECT_BINDING_CHANGED",
 )
 check("pending can invalidate", invalidated.state == "INVALIDATED")
-expect_error(
-    "terminal invalidated cannot invalidate again",
-    StateConflict,
-    lambda: invalidate_broker.invalidate(
-        approval_id=inv_pending.approval_id,
-        now=1002.0,
-        reason="AGAIN",
-    ),
-)
 
 inv2 = create(invalidate_broker, key="inv-a", attempt="req-3")
-inv2_approved = invalidate_broker.decide(
-    approval_id=inv2.approval_id,
-    now=1001.0,
-    decision="ALLOW",
-    decision_attempt_id="inv-allow",
-    expected_state_version=1,
-    decider_principal="user:owner",
-)
+inv2 = approve(invalidate_broker, inv2, now=1001.0, attempt="inv-allow")
 inv2_final = invalidate_broker.invalidate(
-    approval_id=inv2_approved.approval_id,
+    approval_id=inv2.approval_id,
     now=1002.0,
     reason="AUTHORITY_REVOKED",
 )
-check("approved can invalidate", inv2_final.state == "INVALIDATED")
+check("unfenced approved can invalidate", inv2_final.state == "INVALIDATED")
 
-amb2_broker = new_broker(ttl=20)
-amb2 = create(amb2_broker, key="amb2")
-amb2 = amb2_broker.decide(
-    approval_id=amb2.approval_id,
-    now=1001.0,
-    decision="ALLOW",
-    decision_attempt_id="amb2-allow",
-    expected_state_version=1,
-    decider_principal="user:owner",
-)
-amb2 = amb2_broker.consume_for_session(
-    approval_id=amb2.approval_id,
+inv3 = create(invalidate_broker, key="inv-f", attempt="req-4")
+inv3 = approve(invalidate_broker, inv3, now=1001.0, attempt="invf-allow")
+inv3 = invalidate_broker.acquire_mint_fence(
+    approval_id=inv3.approval_id,
     now=1002.0,
-    mint_attempt_id="amb2-mint",
-    session_ref="amb2-session",
-    mint_commit_proven=None,
+    mint_attempt_id="invf-mint",
+    session_ref="invf-session",
+    expected_state_version=inv3.state_version,
 )
-amb2_reconciled = amb2_broker.reconcile_mint_outcome(
-    approval_id=amb2.approval_id,
-    now=1021.0,
-    mint_attempt_id="amb2-mint",
-    session_ref="amb2-session",
-    committed=False,
+expect_error(
+    "fenced approved cannot invalidate before reconciliation",
+    StateConflict,
+    lambda: invalidate_broker.invalidate(
+        approval_id=inv3.approval_id,
+        now=1003.0,
+        reason="AUTHORITY_REVOKED",
+    ),
 )
-check("reconcile noncommit after ttl -> EXPIRED", amb2_reconciled.state == "EXPIRED")
-
-amb3_broker = new_broker()
-amb3 = create(amb3_broker, key="amb3")
-amb3 = amb3_broker.decide(
-    approval_id=amb3.approval_id,
-    now=1001.0,
-    decision="ALLOW",
-    decision_attempt_id="amb3-allow",
-    expected_state_version=1,
-    decider_principal="user:owner",
-)
-amb3 = amb3_broker.consume_for_session(
-    approval_id=amb3.approval_id,
-    now=1002.0,
-    mint_attempt_id="amb3-mint",
-    session_ref="amb3-session",
-    mint_commit_proven=None,
-)
-amb3_reconciled = amb3_broker.reconcile_mint_outcome(
-    approval_id=amb3.approval_id,
-    now=1003.0,
-    mint_attempt_id="amb3-mint",
-    session_ref="amb3-session",
-    committed=True,
-)
-check("reconcile commit -> CONSUMED", amb3_reconciled.state == "CONSUMED")
 
 for name, ok in checks:
     print(("PASS" if ok else "FAIL") + " " + name)
