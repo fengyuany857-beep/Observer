@@ -78,6 +78,34 @@ public struct ObserverReadJobsPage: Sendable, Equatable {
     public let jobs: [ObserverReadJob]
 }
 
+public struct ObserverReadOperation: Sendable, Equatable, Identifiable {
+    public let operationID: String
+    public let sessionID: String
+    public let projectID: String
+    public let kind: String
+    public let name: String
+    public let startedAt: Date
+    public let currentness: String
+    public let authority: String
+    public let freshness: String
+
+    public var id: String { operationID }
+}
+
+public struct ObserverReadOperationsPage: Sendable, Equatable {
+    public let sourceInstanceID: String
+    public let authorityInstanceID: String
+    public let projectID: String
+    public let sessionID: String?
+    public let availability: String
+    public let observedAt: Date
+    public let operations: [ObserverReadOperation]
+
+    public func currentOperation(for sessionID: String) -> ObserverReadOperation? {
+        operations.first { $0.sessionID == sessionID }
+    }
+}
+
 public struct ObserverReadEvent: Sendable, Equatable, Identifiable {
     public let eventID: Int
     public let eventIdentity: String
@@ -336,6 +364,92 @@ public struct ObserverReadAPIClient: Sendable {
                     freshness: row.freshness
                 )
             }
+        )
+    }
+
+    public func operations(
+        projectID: String,
+        sessionID: String? = nil
+    ) async throws -> ObserverReadOperationsPage {
+        try Self.validateProjectID(projectID)
+        if let sessionID,
+           sessionID.range(of: Self.sessionPattern, options: .regularExpression) == nil {
+            throw ObserverReadAPIError.invalidSessionID
+        }
+
+        let output = try await client.getOperations(
+            path: .init(projectId: projectID),
+            query: .init(sessionId: sessionID)
+        )
+        let payload: Components.Schemas.ObserverOperationsEnvelope
+        do {
+            payload = try output.ok.body.json
+        } catch {
+            throw ObserverReadAPIError.unexpectedResponse
+        }
+
+        guard payload.contractVersion == "observer.operations.v1" else {
+            throw ObserverReadAPIError.responseContractMismatch(
+                expected: "observer.operations.v1",
+                actual: payload.contractVersion
+            )
+        }
+        guard payload.projectId == projectID,
+              payload.sessionId == sessionID else {
+            throw ObserverReadAPIError.responseScopeMismatch
+        }
+        guard payload.availability == "AVAILABLE" else {
+            throw ObserverReadAPIError.unavailable(payload.availability)
+        }
+        guard let authorityInstanceID = payload.authorityInstanceId,
+              !authorityInstanceID.isEmpty else {
+            throw ObserverReadAPIError.responseContractMismatch(
+                expected: "CURRENT_PROCESS_AUTHORITY_INSTANCE",
+                actual: payload.authorityInstanceId ?? ""
+            )
+        }
+
+        var seenSessions = Set<String>()
+        let operations = try payload.operations.map { row -> ObserverReadOperation in
+            guard row.projectId == projectID,
+                  sessionID == nil || row.sessionId == sessionID else {
+                throw ObserverReadAPIError.responseScopeMismatch
+            }
+            guard row.currentness == "CURRENT",
+                  row.authority == "GATEWAY_IN_FLIGHT_CALL",
+                  row.freshness == "CURRENT_PROCESS" else {
+                throw ObserverReadAPIError.responseContractMismatch(
+                    expected: "CURRENT_GATEWAY_IN_FLIGHT_CALL",
+                    actual: "\(row.currentness)|\(row.authority)|\(row.freshness)"
+                )
+            }
+            guard seenSessions.insert(row.sessionId).inserted else {
+                throw ObserverReadAPIError.responseContractMismatch(
+                    expected: "ONE_CURRENT_OPERATION_PER_SESSION",
+                    actual: row.sessionId
+                )
+            }
+            return ObserverReadOperation(
+                operationID: row.operationId,
+                sessionID: row.sessionId,
+                projectID: row.projectId,
+                kind: row.kind,
+                name: row.name,
+                startedAt: Date(timeIntervalSince1970: row.startedAt),
+                currentness: row.currentness,
+                authority: row.authority,
+                freshness: row.freshness
+            )
+        }
+
+        return ObserverReadOperationsPage(
+            sourceInstanceID: payload.sourceInstanceId,
+            authorityInstanceID: authorityInstanceID,
+            projectID: payload.projectId,
+            sessionID: payload.sessionId,
+            availability: payload.availability,
+            observedAt: Date(timeIntervalSince1970: payload.observedAt),
+            operations: operations
         )
     }
 
