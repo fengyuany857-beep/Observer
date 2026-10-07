@@ -15,20 +15,26 @@ APP_PATH="build/DerivedData/Build/Products/Debug-iphonesimulator/Observer.app"
 test -d "$APP_PATH"
 xcrun simctl install "$UDID" "$APP_PATH"
 
-DATA_CONTAINER="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)"
-mkdir -p "$DATA_CONTAINER/Documents"
-
 capture() {
   local preset="$1"
   local filename="$2"
 
+  echo "Rendering topology preset $preset"
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
   sleep 0.5
+
   xcrun simctl launch "$UDID" "$BUNDLE_ID" --topology-preset "$preset" --snapshot-ci-ready
-  sleep 3
+  sleep 3.0
 
   xcrun simctl io "$UDID" screenshot "$OUT_DIR/$filename"
   test -s "$OUT_DIR/$filename"
+
+  local width height
+  width="$(sips -g pixelWidth "$OUT_DIR/$filename" | awk '/pixelWidth/ {print $2}')"
+  height="$(sips -g pixelHeight "$OUT_DIR/$filename" | awk '/pixelHeight/ {print $2}')"
+  echo "$filename: ${width}x${height}"
+  test "$width" -ge 500
+  test "$height" -ge 1000
 }
 
 capture A "A-barely-there.png"
@@ -36,5 +42,6 @@ capture B "B-balanced.png"
 capture C "C-upper-bound.png"
 
 xcrun simctl status_bar "$UDID" clear || true
+
 cd Artifacts
 zip -qry Observer-Topology-Prototypes.zip TopologyPrototypes
