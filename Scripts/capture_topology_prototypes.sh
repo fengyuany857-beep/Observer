@@ -21,7 +21,7 @@ mkdir -p "$DATA_CONTAINER/Documents"
 capture() {
   local preset="$1"
   local filename="$2"
-  local marker="$DATA_CONTAINER/Documents/observer-topology-ready-${preset,,}"
+  local marker
 
   case "$preset" in
     A) marker="$DATA_CONTAINER/Documents/observer-topology-ready-barelyThere" ;;
