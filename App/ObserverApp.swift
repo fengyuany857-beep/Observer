@@ -5,15 +5,24 @@ import SwiftUI
 struct ObserverApp: App {
     private let previewScenario: ObserverPreviewScenario?
     private let surface: ObserverLaunchSurface
+    private let topologyPreset: ObserverTopologyPreset?
 
     init() {
         let args = ProcessInfo.processInfo.arguments
+
+        if let rawPreset = Self.value(after: "--topology-preset", in: args) {
+            self.topologyPreset = Self.topologyPreset(rawPreset)
+        } else {
+            self.topologyPreset = nil
+        }
+
         if args.contains("--scenario") {
             self.previewScenario = Self.value(after: "--scenario", in: args)
                 .flatMap(ObserverPreviewScenario.init(rawValue:)) ?? .runningActiveOnline
         } else {
             self.previewScenario = nil
         }
+
         self.surface = Self.value(after: "--surface", in: args)
             .flatMap(ObserverLaunchSurface.init(rawValue:)) ?? .overview
     }
@@ -21,6 +30,22 @@ struct ObserverApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
+#if DEBUG
+                if let topologyPreset {
+                    ObserverTopologyPrototypeView(preset: topologyPreset)
+                        .modifier(TopologySnapshotReadinessReporter(preset: topologyPreset))
+                } else if let previewScenario {
+                    ObserverLaunchRoot(scenario: previewScenario, surface: surface)
+                        .modifier(
+                            SnapshotReadinessReporter(
+                                scenario: previewScenario,
+                                surface: surface
+                            )
+                        )
+                } else {
+                    ObserverLiveRoot()
+                }
+#else
                 if let previewScenario {
                     ObserverLaunchRoot(scenario: previewScenario, surface: surface)
                         .modifier(
@@ -32,6 +57,7 @@ struct ObserverApp: App {
                 } else {
                     ObserverLiveRoot()
                 }
+#endif
             }
             .preferredColorScheme(.dark)
         }
@@ -40,6 +66,15 @@ struct ObserverApp: App {
     private static func value(after flag: String, in args: [String]) -> String? {
         guard let i = args.firstIndex(of: flag), args.indices.contains(i + 1) else { return nil }
         return args[i + 1]
+    }
+
+    private static func topologyPreset(_ raw: String) -> ObserverTopologyPreset? {
+        switch raw.uppercased() {
+        case "A": return .barelyThere
+        case "B": return .balanced
+        case "C": return .upperBound
+        default: return ObserverTopologyPreset(rawValue: raw)
+        }
     }
 }
 
@@ -93,3 +128,22 @@ private struct SnapshotReadinessReporter: ViewModifier {
         }
     }
 }
+
+#if DEBUG
+private struct TopologySnapshotReadinessReporter: ViewModifier {
+    let preset: ObserverTopologyPreset
+
+    func body(content: Content) -> some View {
+        content.task(id: preset.rawValue) {
+            guard ProcessInfo.processInfo.arguments.contains("--snapshot-ci-ready") else { return }
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+            let marker = directory.appendingPathComponent(
+                "observer-topology-ready-\(preset.rawValue)"
+            )
+            try? Data("ready".utf8).write(to: marker, options: .atomic)
+        }
+    }
+}
+#endif
