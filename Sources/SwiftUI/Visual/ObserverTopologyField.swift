@@ -68,7 +68,7 @@ public enum ObserverTopologyPreset: String, CaseIterable, Identifiable {
 
         switch self {
         case .barelyThere:
-            ObserverTopologyConfiguration(
+            return ObserverTopologyConfiguration(
                 seedX: 14.27,
                 seedY: -3.91,
                 scale: 2.15,
@@ -84,7 +84,7 @@ public enum ObserverTopologyPreset: String, CaseIterable, Identifiable {
             )
 
         case .balanced:
-            ObserverTopologyConfiguration(
+            return ObserverTopologyConfiguration(
                 seedX: 14.27,
                 seedY: -3.91,
                 scale: 2.15,
@@ -100,7 +100,7 @@ public enum ObserverTopologyPreset: String, CaseIterable, Identifiable {
             )
 
         case .upperBound:
-            ObserverTopologyConfiguration(
+            return ObserverTopologyConfiguration(
                 seedX: 14.27,
                 seedY: -3.91,
                 scale: 2.15,
@@ -126,24 +126,38 @@ public struct ObserverTopologyField: View {
     }
 
     public var body: some View {
-        Rectangle()
-            .fill(configuration.baseColor)
+        let baseColor = configuration.baseColor
+        let seedX = configuration.seedX
+        let seedY = configuration.seedY
+        let scale = configuration.scale
+        let levels = configuration.levels
+        let warp = configuration.warp
+        let minorLineWidth = configuration.minorLineWidth
+        let majorLineWidth = configuration.majorLineWidth
+        let minorOpacity = configuration.minorOpacity
+        let majorOpacity = configuration.majorOpacity
+        let majorEvery = configuration.majorEvery
+        let minorColor = configuration.minorColor
+        let majorColor = configuration.majorColor
+
+        return Rectangle()
+            .fill(baseColor)
             .visualEffect { content, proxy in
                 content.colorEffect(
                     ShaderLibrary.observerStaticTopology(
                         .float2(proxy.size),
-                        .float(configuration.seedX),
-                        .float(configuration.seedY),
-                        .float(configuration.scale),
-                        .float(configuration.levels),
-                        .float(configuration.warp),
-                        .float(configuration.minorLineWidth),
-                        .float(configuration.majorLineWidth),
-                        .float(configuration.minorOpacity),
-                        .float(configuration.majorOpacity),
-                        .float(configuration.majorEvery),
-                        .color(configuration.minorColor),
-                        .color(configuration.majorColor)
+                        .float(seedX),
+                        .float(seedY),
+                        .float(scale),
+                        .float(levels),
+                        .float(warp),
+                        .float(minorLineWidth),
+                        .float(majorLineWidth),
+                        .float(minorOpacity),
+                        .float(majorOpacity),
+                        .float(majorEvery),
+                        .color(minorColor),
+                        .color(majorColor)
                     )
                 )
             }
