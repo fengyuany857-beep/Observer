@@ -3,7 +3,7 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, observer-ui-v2-b8-live-graft-ci-20261007 ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
