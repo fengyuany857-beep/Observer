@@ -21,25 +21,12 @@ mkdir -p "$DATA_CONTAINER/Documents"
 capture() {
   local preset="$1"
   local filename="$2"
-  local marker
 
-  case "$preset" in
-    A) marker="$DATA_CONTAINER/Documents/observer-topology-ready-barelyThere" ;;
-    B) marker="$DATA_CONTAINER/Documents/observer-topology-ready-balanced" ;;
-    C) marker="$DATA_CONTAINER/Documents/observer-topology-ready-upperBound" ;;
-  esac
-
-  rm -f "$marker"
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+  sleep 0.5
   xcrun simctl launch "$UDID" "$BUNDLE_ID" --topology-preset "$preset" --snapshot-ci-ready
+  sleep 3
 
-  for _ in $(seq 1 80); do
-    [[ -f "$marker" ]] && break
-    sleep 0.2
-  done
-  test -f "$marker"
-
-  sleep 0.6
   xcrun simctl io "$UDID" screenshot "$OUT_DIR/$filename"
   test -s "$OUT_DIR/$filename"
 }
