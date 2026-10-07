@@ -1,0 +1,212 @@
+{
+  "freeze_id": "OBSERVER-BACKEND-FREEZE-20261007-R1",
+  "base_commit": "f520d8d71235bdd1b215de5095e9d218ae83325a",
+  "status": "FROZEN_CONTRACT",
+  "truth_hierarchy": [
+    "Project",
+    "Session",
+    "Job",
+    "Operation"
+  ],
+  "side_truth": [
+    "Authority",
+    "Approval",
+    "Lifecycle",
+    "Event",
+    "Effect",
+    "Health"
+  ],
+  "contracts": {
+    "read_transport": "observer.transport.v1",
+    "read_plane": "observer.read-plane.v1",
+    "snapshot": "observer.snapshot.v1",
+    "authority": "observer.authority.v1",
+    "events": "observer.events.v1",
+    "jobs": "observer.jobs.v1",
+    "operations": "observer.operations.v1",
+    "effects": "observer.effects.v1",
+    "owner_transport": "observer.owner-control.transport.v1",
+    "owner_control": "observer.owner-control.v1"
+  },
+  "auth": {
+    "read_token_prefix": "obsr_",
+    "owner_token_prefix": "obsw_",
+    "session_handle_exposed_to_observer": false,
+    "raw_token_persisted": false
+  },
+  "read_http": {
+    "method_policy": "GET_ONLY",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/observer/v1/healthz",
+        "auth": "NONE_LOOPBACK_HEALTH"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/snapshot",
+        "query": ["project_id"],
+        "auth": "obsr_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/projects/{project_id}",
+        "auth": "obsr_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/projects/{project_id}/events",
+        "query_optional": ["after_id", "limit"],
+        "auth": "obsr_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/projects/{project_id}/jobs",
+        "query_optional": ["session_id", "limit"],
+        "auth": "obsr_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/projects/{project_id}/operations",
+        "query_optional": ["session_id"],
+        "auth": "obsr_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/projects/{project_id}/effects",
+        "query_optional": ["task_id", "limit"],
+        "auth": "obsr_"
+      }
+    ],
+    "request_headers": {
+      "X-Observer-Request-Generation": "optional_positive_int64",
+      "X-Observer-Read-Intent": [
+        "POLL",
+        "MANUAL_REFRESH",
+        "RECONNECT_BASELINE"
+      ],
+      "If-None-Match": "optional_snapshot_revision_etag"
+    },
+    "response_headers": [
+      "X-Observer-Transport",
+      "X-Observer-Read-Contract",
+      "X-Observer-Source-Instance",
+      "X-Observer-Snapshot-Revision",
+      "X-Observer-Event-Cursor",
+      "X-Observer-Observed-At",
+      "X-Observer-Request-Generation",
+      "X-Observer-Read-Intent",
+      "ETag"
+    ],
+    "not_modified_status": 304
+  },
+  "owner_http": {
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/observer/v1/control/healthz",
+        "auth": "NONE_LOOPBACK_HEALTH"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/control/projects/{project_id}/approvals",
+        "auth": "obsw_"
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/control/approvals/{approval_id}",
+        "auth": "obsw_"
+      },
+      {
+        "method": "POST",
+        "path": "/observer/v1/control/approvals/{approval_id}/decision",
+        "auth": "obsw_",
+        "body_exact": [
+          "decision",
+          "decision_attempt_id",
+          "expected_state_version"
+        ],
+        "decision_values": ["ALLOW", "DENY"]
+      },
+      {
+        "method": "POST",
+        "path": "/observer/v1/control/sessions/{session_id}/close",
+        "auth": "obsw_",
+        "body_exact": ["close_attempt_id"]
+      },
+      {
+        "method": "GET",
+        "path": "/observer/v1/control/sessions/{session_id}/close/{close_attempt_id}",
+        "auth": "obsw_"
+      }
+    ]
+  },
+  "session_deadline": {
+    "hard_ttl_seconds": 1500,
+    "close_reminder_seconds": 90,
+    "close_required_elapsed_seconds": 1410,
+    "deadline_phases": [
+      "ACTIVE",
+      "CLOSE_REQUIRED",
+      "HARD_EXPIRED",
+      "TERMINAL"
+    ],
+    "t_plus_23_30_mutates_session_state": false,
+    "t_plus_25_00_hard_expiry_owner": "WATCHDOG_EXISTING_EXPIRY_PATH"
+  },
+  "currentness": {
+    "job_running": "LAST_OBSERVED_ACTIVE",
+    "operation_current": "ONLY_REAL_PROCESS_LOCAL_IN_FLIGHT_BACKEND_CALL",
+    "session_active_implies_current_operation": false,
+    "job_running_implies_current_operation": false,
+    "cached_current_allowed_when_transport_offline": false
+  },
+  "read_race": {
+    "ordering_owner": "CLIENT_REQUEST_GENERATION",
+    "source_restart_signal": "source_instance_id",
+    "snapshot_identity": "snapshot_revision",
+    "incremental_event_position": "event_cursor",
+    "older_response_may_overwrite_newer_generation": false,
+    "source_instance_change_requires_full_snapshot": true,
+    "cursor_regression_requires_full_snapshot": true
+  },
+  "approval": {
+    "states": [
+      "PENDING",
+      "APPROVED",
+      "DENIED",
+      "EXPIRED",
+      "CONSUMED",
+      "INVALIDATED",
+      "FAILED",
+      "OUTCOME_UNKNOWN"
+    ],
+    "allow_mints_session_to_app": false,
+    "session_claim_owner": "GPT_SESSION_ACCESS_BROKER"
+  },
+  "session_lifecycle": {
+    "states": [
+      "REQUESTED",
+      "EXECUTING",
+      "VERIFYING",
+      "SUCCEEDED",
+      "OUTCOME_UNKNOWN",
+      "FAILED"
+    ],
+    "credential_revoke_precedes_fallible_cleanup": true,
+    "revoked_means_cleanup_succeeded": false,
+    "outcome_unknown_means_logged_out": false
+  },
+  "observer_mcp_read_methods": [
+    "observer_snapshot",
+    "observer_project",
+    "observer_events",
+    "observer_jobs",
+    "observer_operations",
+    "observer_effects"
+  ],
+  "production": {
+    "deployment_in_b8_authorized": false,
+    "feature_enablement_in_b8_authorized": false
+  }
+}

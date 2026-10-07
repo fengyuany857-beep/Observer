@@ -1,0 +1,423 @@
+openapi: 3.0.3
+info:
+  title: Observer Read Plane
+  version: 1.0.0
+  description: GET-only projection contract for the Observer native mobile console.
+servers:
+  - url: https://observer.invalid
+security:
+  - ObserverBearer: []
+paths:
+  /observer/v1/snapshot:
+    get:
+      operationId: getSnapshot
+      parameters:
+        - $ref: '#/components/parameters/ProjectQuery'
+      responses:
+        '200':
+          description: Project-scoped Observer snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverSnapshot'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+  /observer/v1/projects/{project_id}:
+    get:
+      operationId: getProjectSnapshot
+      parameters:
+        - $ref: '#/components/parameters/ProjectPath'
+      responses:
+        '200':
+          description: Project-scoped Observer snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverSnapshot'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+  /observer/v1/projects/{project_id}/events:
+    get:
+      operationId: getEvents
+      parameters:
+        - $ref: '#/components/parameters/ProjectPath'
+        - name: after_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 200
+      responses:
+        '200':
+          description: Cursor-bounded project events. Events are hints, not canonical truth.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverEventsEnvelope'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+  /observer/v1/projects/{project_id}/jobs:
+    get:
+      operationId: getJobs
+      parameters:
+        - $ref: '#/components/parameters/ProjectPath'
+        - name: session_id
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+      responses:
+        '200':
+          description: Gateway job-ledger projection. RUNNING is only last-observed active state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverJobsEnvelope'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+  /observer/v1/projects/{project_id}/operations:
+    get:
+      operationId: getOperations
+      parameters:
+        - $ref: '#/components/parameters/ProjectPath'
+        - name: session_id
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$'
+      responses:
+        '200':
+          description: Process-local Gateway operations that are currently in flight.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverOperationsEnvelope'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+  /observer/v1/projects/{project_id}/effects:
+    get:
+      operationId: getEffects
+      parameters:
+        - $ref: '#/components/parameters/ProjectPath'
+        - name: task_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+      responses:
+        '200':
+          description: Public project effect projection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverEffectsEnvelope'
+        default:
+          $ref: '#/components/responses/ObserverErrorResponse'
+components:
+  securitySchemes:
+    ObserverBearer:
+      type: http
+      scheme: bearer
+  parameters:
+    ProjectPath:
+      name: project_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProjectID'
+    ProjectQuery:
+      name: project_id
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProjectID'
+  responses:
+    ObserverErrorResponse:
+      description: Observer transport error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ObserverErrorEnvelope'
+  schemas:
+    ProjectID:
+      type: string
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+    ObserverErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: true
+          required: [code]
+          properties:
+            code:
+              type: string
+    ObserverProject:
+      type: object
+      additionalProperties: false
+      required: [project_id, display_name]
+      properties:
+        project_id: { type: string }
+        display_name: { type: string }
+    ObserverSession:
+      type: object
+      additionalProperties: false
+      required:
+        - session_id
+        - project_id
+        - state
+        - state_class
+        - created_at
+        - expires_at
+        - session_age_seconds
+        - remaining_seconds
+      properties:
+        session_id: { type: string }
+        project_id: { type: string }
+        state: { type: string }
+        state_class: { type: string }
+        created_at: { type: number, format: double }
+        expires_at: { type: number, format: double }
+        started_at: { type: number, format: double, nullable: true }
+        ended_at: { type: number, format: double, nullable: true }
+        last_model_activity: { type: number, format: double, nullable: true }
+        last_execution_activity: { type: number, format: double, nullable: true }
+        failure_reason: { type: string, nullable: true }
+        queue_position: { type: integer, nullable: true }
+        session_age_seconds: { type: number, format: double }
+        execution_elapsed_seconds: { type: number, format: double, nullable: true }
+        remaining_seconds: { type: number, format: double }
+    ObserverHeartbeat:
+      type: object
+      additionalProperties: false
+      required: [component, status, observed_at, detail, age_seconds, freshness]
+      properties:
+        component: { type: string }
+        status: { type: string }
+        observed_at: { type: number, format: double }
+        detail:
+          type: object
+          additionalProperties: true
+        age_seconds: { type: number, format: double }
+        freshness: { type: string }
+    ObserverEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - event_id
+        - event_identity
+        - event_type
+        - created_at
+        - source
+        - authoritative
+        - payload
+      properties:
+        event_id: { type: integer }
+        event_identity: { type: string }
+        event_type: { type: string }
+        created_at: { type: number, format: double }
+        session_id: { type: string, nullable: true }
+        project_id: { type: string, nullable: true }
+        source: { type: string }
+        authoritative: { type: boolean }
+        payload:
+          type: object
+          additionalProperties: true
+    ObserverEffect:
+      type: object
+      additionalProperties: false
+      required: [effect_id, task_id, project_id, state, state_known, generation, created_at, updated_at]
+      properties:
+        effect_id: { type: string }
+        task_id: { type: string }
+        project_id: { type: string }
+        state: { type: string }
+        state_known: { type: boolean }
+        generation: { type: integer }
+        receipt:
+          type: object
+          nullable: true
+          additionalProperties: true
+        last_error_code: { type: string, nullable: true }
+        created_at: { type: string }
+        updated_at: { type: string }
+    ObserverJob:
+      type: object
+      additionalProperties: false
+      required:
+        - job_id
+        - session_id
+        - project_id
+        - gateway_state
+        - state_class
+        - heavy
+        - created_at
+        - updated_at
+        - authority
+        - freshness
+      properties:
+        job_id: { type: string }
+        session_id: { type: string }
+        project_id: { type: string }
+        gateway_state: { type: string }
+        state_class: { type: string }
+        heavy: { type: boolean }
+        created_at: { type: number, format: double }
+        updated_at: { type: number, format: double }
+        authority: { type: string }
+        freshness: { type: string }
+    ObserverOperation:
+      type: object
+      additionalProperties: false
+      required:
+        - operation_id
+        - session_id
+        - project_id
+        - kind
+        - name
+        - started_at
+        - currentness
+        - authority
+        - freshness
+      properties:
+        operation_id: { type: string }
+        session_id: { type: string }
+        project_id: { type: string }
+        kind: { type: string }
+        name: { type: string }
+        started_at: { type: number, format: double }
+        currentness: { type: string }
+        authority: { type: string }
+        freshness: { type: string }
+    ObserverSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - contract_version
+        - source_instance_id
+        - snapshot_revision
+        - observed_at
+        - projects
+        - sessions
+        - heartbeats
+        - effects
+        - events
+        - event_cursor
+        - availability
+      properties:
+        contract_version: { type: string }
+        source_instance_id: { type: string }
+        snapshot_revision: { type: string }
+        observed_at: { type: number, format: double }
+        authoritative_focus_task_id: { type: string, nullable: true }
+        projects:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverProject' }
+        sessions:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverSession' }
+        heartbeats:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverHeartbeat' }
+        effects:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverEffect' }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverEvent' }
+        event_cursor: { type: integer }
+        availability:
+          type: object
+          additionalProperties:
+            type: string
+    ObserverEventsEnvelope:
+      type: object
+      additionalProperties: false
+      required: [contract_version, source_instance_id, project_id, events, event_cursor]
+      properties:
+        contract_version: { type: string }
+        source_instance_id: { type: string }
+        project_id: { type: string }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverEvent' }
+        event_cursor: { type: integer }
+    ObserverJobsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - contract_version
+        - source_instance_id
+        - project_id
+        - availability
+        - jobs
+      properties:
+        contract_version: { type: string }
+        source_instance_id: { type: string }
+        project_id: { type: string }
+        session_id: { type: string, nullable: true }
+        availability: { type: string }
+        jobs:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverJob' }
+    ObserverOperationsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - contract_version
+        - source_instance_id
+        - project_id
+        - availability
+        - observed_at
+        - operations
+      properties:
+        contract_version: { type: string }
+        source_instance_id: { type: string }
+        authority_instance_id: { type: string, nullable: true }
+        project_id: { type: string }
+        session_id: { type: string, nullable: true }
+        availability: { type: string }
+        observed_at: { type: number, format: double }
+        operations:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverOperation' }
+    ObserverEffectsEnvelope:
+      type: object
+      additionalProperties: false
+      required: [contract_version, project_id, effects]
+      properties:
+        contract_version: { type: string }
+        project_id: { type: string }
+        task_id: { type: string, nullable: true }
+        effects:
+          type: array
+          items: { $ref: '#/components/schemas/ObserverEffect' }

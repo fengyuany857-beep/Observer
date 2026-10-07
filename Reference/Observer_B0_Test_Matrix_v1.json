@@ -1,0 +1,32 @@
+{
+  "matrix_id": "observer.b0.test-matrix.v1",
+  "contract_ref": "observer.backend.authority-time.v1",
+  "revision": "B0-2026-10-06-R1",
+  "test_mode": "STATIC_CONTRACT_AND_REFERENCE_MODEL",
+  "cases": [
+    {"id":"B0-T01","axis":"identity","given":"grant ISSUED","when":"consume once","expect":"CONSUMED"},
+    {"id":"B0-T02","axis":"identity","given":"grant CONSUMED","when":"consume again","expect":"REJECT_REPLAY"},
+    {"id":"B0-T03","axis":"approval","given":"approval PENDING","when":"GPT wait reaches 30s","expect":"approval remains PENDING unless its own TTL elapsed"},
+    {"id":"B0-T04","axis":"approval","given":"approval APPROVED","when":"no session mint occurs","expect":"do not report SESSION_MINTED"},
+    {"id":"B0-T05","axis":"approval","given":"approval APPROVED unconsumed","when":"session mint consumes approval","expect":"approval CONSUMED exactly once"},
+    {"id":"B0-T06","axis":"time","given":"authorized_at=t","when":"compute hard expiry","expect":"t+1500s"},
+    {"id":"B0-T07","axis":"time","given":"client clock altered","when":"server evaluates lease","expect":"deadline unchanged"},
+    {"id":"B0-T08","axis":"time","given":"session ACTIVE before expiry","when":"server_now reaches hard_expires_at","expect":"session authority not ACTIVE"},
+    {"id":"B0-T09","axis":"time","given":"session EXPIRED","when":"later request arrives","expect":"cannot reactivate same authority chain"},
+    {"id":"B0-T10","axis":"time","given":"daily close 23:30","when":"policy triggers","expect":"CLOSE_REQUIRED policy without SESSION_EXPIRED inference"},
+    {"id":"B0-T11","axis":"time","given":"daily close triggers","when":"session has remaining TTL","expect":"daily policy does not extend or rewrite hard expiry"},
+    {"id":"B0-T12","axis":"credential","given":"credential bound to session","when":"session expires","expect":"credential invalid"},
+    {"id":"B0-T13","axis":"credential","given":"credential bound to session","when":"session revoked","expect":"credential invalid"},
+    {"id":"B0-T14","axis":"credential","given":"Observer projection","when":"serialize state","expect":"no raw grant/session credential"},
+    {"id":"B0-T15","axis":"a6","given":"Session ACTIVE","when":"no BackendProxy call in flight","expect":"no CURRENT Operation"},
+    {"id":"B0-T16","axis":"a6","given":"Job RUNNING","when":"no BackendProxy call in flight","expect":"no CURRENT Operation"},
+    {"id":"B0-T17","axis":"a6","given":"CURRENT Operation disappears","when":"observe Job","expect":"do not infer Job finished"},
+    {"id":"B0-T18","axis":"a6","given":"event says failure","when":"authoritative state differs","expect":"event does not override truth"},
+    {"id":"B0-T19","axis":"freshness","given":"cached prior CURRENT operation","when":"App offline","expect":"cannot claim CURRENT from cache"},
+    {"id":"B0-T20","axis":"lifecycle","given":"Session REVOKED","when":"resource cleanup pending","expect":"do not report cleanup verified"},
+    {"id":"B0-T21","axis":"lifecycle","given":"logout response lost","when":"real revoke state unreadable","expect":"OUTCOME_UNKNOWN"},
+    {"id":"B0-T22","axis":"boundary","given":"session minted","when":"project bind not verified","expect":"do not report PROJECT_BOUND"},
+    {"id":"B0-T23","axis":"boundary","given":"GPT wait timeout","when":"approval later becomes APPROVED before approval TTL","expect":"later turn may observe APPROVED"},
+    {"id":"B0-T24","axis":"boundary","given":"daily close policy CLOSE_REQUIRED","when":"App/GPT unavailable","expect":"server hard Session TTL still enforced"}
+  ]
+}

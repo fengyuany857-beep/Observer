@@ -21,6 +21,10 @@ public enum ObserverRadius {
 }
 
 public enum ObserverPalette {
+    public static var surfaceBase: Color { Color(red: 0.035, green: 0.039, blue: 0.043) }
+    public static var topologyMinor: Color { Color(red: 0.42, green: 0.45, blue: 0.48) }
+    public static var topologyMajor: Color { Color(red: 0.55, green: 0.58, blue: 0.61) }
+
     public static func color(for tone: SemanticTone) -> Color {
         switch tone {
         case .positive: .green

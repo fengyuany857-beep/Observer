@@ -3,6 +3,7 @@ import SwiftUI
 public enum ObserverRootTab: Hashable {
     case overview
     case runs
+    case approvals
     case settings
 }
 

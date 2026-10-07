@@ -93,11 +93,104 @@ public enum OverviewFocusMode: Sendable, Equatable {
     case empty
 }
 
+public struct OverviewSessionPresentation: Sendable, Equatable {
+    public let sessionID: String
+    public let state: String
+    public let stateClass: String
+    public let remainingSeconds: Int
+    public let elapsedSeconds: Int
+    public let hardTTLSeconds: Int
+    public let closeReminderSeconds: Int
+    public let deadlinePhase: String
+    public let closeRequired: Bool
+    public let queuePosition: Int?
+    public let credentialState: String
+}
+
+public struct OverviewHealthComponentPresentation: Identifiable, Sendable, Equatable {
+    public var id: String { component }
+    public let component: String
+    public let status: String
+    public let freshness: String
+}
+
+public struct OverviewLiveRuntimePresentation: Sendable, Equatable {
+    public let projectID: String
+    public let projectLabel: String
+    public let freshness: ObserverB8Freshness
+    public let transportLive: Bool
+    public let session: OverviewSessionPresentation?
+    public let currentOperation: CurrentOperationPresentation?
+    public let pendingApprovalCount: Int
+    public let queuedSessionCount: Int
+    public let health: [OverviewHealthComponentPresentation]
+}
+
 public struct OverviewPresentation: Sendable, Equatable {
     public let pageIdentity: String
     public let connectionIncident: ConnectionIncidentPresentation?
     public let focusMode: OverviewFocusMode
     public let cachedNotice: String?
+    public let liveRuntime: OverviewLiveRuntimePresentation?
+
+    public init(
+        pageIdentity: String,
+        connectionIncident: ConnectionIncidentPresentation?,
+        focusMode: OverviewFocusMode,
+        cachedNotice: String?,
+        liveRuntime: OverviewLiveRuntimePresentation? = nil
+    ) {
+        self.pageIdentity = pageIdentity
+        self.connectionIncident = connectionIncident
+        self.focusMode = focusMode
+        self.cachedNotice = cachedNotice
+        self.liveRuntime = liveRuntime
+    }
+}
+
+public struct ProjectJobPresentation: Identifiable, Sendable, Equatable {
+    public var id: String { jobID }
+    public let jobID: String
+    public let gatewayState: String
+    public let stateClass: String
+    public let heavy: Bool
+    public let updatedAt: Date
+    public let freshness: String
+}
+
+public struct ProjectLifecyclePresentation: Identifiable, Sendable, Equatable {
+    public var id: String { operationID }
+    public let operationID: String
+    public let action: String
+    public let state: String
+    public let reason: String
+    public let errorCode: String?
+    public let updatedAt: Date
+}
+
+public struct ProjectEffectPresentation: Identifiable, Sendable, Equatable {
+    public var id: String { effectID }
+    public let effectID: String
+    public let taskID: String
+    public let state: String
+    public let stateKnown: Bool
+    public let generation: Int
+    public let errorCode: String?
+    public let needsAttention: Bool
+}
+
+public struct ProjectDetailLivePresentation: Sendable, Equatable {
+    public let projectID: String
+    public let projectLabel: String
+    public let freshness: ObserverB8Freshness
+    public let transportLive: Bool
+    public let connectionIncident: ConnectionIncidentPresentation?
+    public let cachedNotice: String?
+    public let session: OverviewSessionPresentation?
+    public let currentOperation: CurrentOperationPresentation?
+    public let jobs: [ProjectJobPresentation]
+    public let lifecycle: [ProjectLifecyclePresentation]
+    public let effects: [ProjectEffectPresentation]
 }
 
 public struct RunRowPresentation: Identifiable, Sendable, Equatable {
@@ -299,6 +392,172 @@ public enum ObserverProjectionBuilder {
             return .init(pageIdentity: "OBSERVER", connectionIncident: connection, focusMode: .lastRun(runSummary(latest, provenance: snapshot.provenance)), cachedNotice: cachedNotice)
         }
         return .init(pageIdentity: "OBSERVER", connectionIncident: connection, focusMode: .empty, cachedNotice: cachedNotice)
+    }
+
+    public static func makeOverview(_ envelope: ObserverDataEnvelope) -> OverviewPresentation {
+        let base = makeOverview(envelope.snapshot)
+        guard let backend = envelope.backendTruth else { return base }
+
+        let terminalStates = Set(["EXPIRED", "FINISHED", "FAILED", "STOPPED"])
+        let priority: [String: Int] = [
+            "RUNNING": 0,
+            "STARTING": 1,
+            "STOPPING": 2,
+            "RECONCILE": 3,
+            "QUEUED": 4,
+            "AUTHORIZED": 5
+        ]
+        let activeSessions = backend.sessions
+            .filter { !terminalStates.contains($0.state) }
+            .sorted { lhs, rhs in
+                let lp = priority[lhs.state] ?? 99
+                let rp = priority[rhs.state] ?? 99
+                if lp != rp { return lp < rp }
+                if lhs.createdAt != rhs.createdAt { return lhs.createdAt > rhs.createdAt }
+                return lhs.sessionID < rhs.sessionID
+            }
+        let session = activeSessions.first
+        let projectID = session?.projectID
+            ?? envelope.snapshot.runs.first?.projectID
+            ?? "UNKNOWN"
+        let projectLabel = envelope.snapshot.runs
+            .first(where: { $0.projectID == projectID })?.projectName
+            ?? projectID
+
+        let sessionPresentation = session.map { item in
+            OverviewSessionPresentation(
+                sessionID: item.sessionID,
+                state: item.state,
+                stateClass: item.stateClass,
+                remainingSeconds: max(0, Int(item.deadline.remainingSeconds.rounded(.down))),
+                elapsedSeconds: max(0, Int(item.deadline.elapsedSeconds.rounded(.down))),
+                hardTTLSeconds: item.deadline.hardTTLSeconds,
+                closeReminderSeconds: item.deadline.closeReminderSeconds,
+                deadlinePhase: item.deadline.phase,
+                closeRequired: item.deadline.closeRequired,
+                queuePosition: item.queuePosition,
+                credentialState: item.authority.credentialState
+            )
+        }
+        let current = session
+            .flatMap { backend.currentOperation(for: $0.sessionID) }
+            .map { CurrentOperationPresentation(
+                kind: $0.kind,
+                name: $0.name,
+                startedAt: Date(timeIntervalSince1970: $0.startedAt)
+            ) }
+        let pendingApprovals = backend.approvals.filter { $0.state == "PENDING" }.count
+        let queuedSessions = backend.sessions.filter { $0.state == "QUEUED" }.count
+        let health = (envelope.systemHealth?.components ?? []).map { item in
+            OverviewHealthComponentPresentation(
+                component: item.component.uppercased(),
+                status: item.status,
+                freshness: item.freshness
+            )
+        }
+
+        let live = OverviewLiveRuntimePresentation(
+            projectID: projectID,
+            projectLabel: projectLabel,
+            freshness: backend.freshness,
+            transportLive: backend.transportLive,
+            session: sessionPresentation,
+            currentOperation: current,
+            pendingApprovalCount: pendingApprovals,
+            queuedSessionCount: queuedSessions,
+            health: health
+        )
+        return OverviewPresentation(
+            pageIdentity: base.pageIdentity,
+            connectionIncident: base.connectionIncident,
+            focusMode: base.focusMode,
+            cachedNotice: base.cachedNotice,
+            liveRuntime: live
+        )
+    }
+
+    public static func makeProjectDetail(
+        _ envelope: ObserverDataEnvelope
+    ) -> ProjectDetailLivePresentation? {
+        guard let backend = envelope.backendTruth,
+              let runtime = makeOverview(envelope).liveRuntime else {
+            return nil
+        }
+        let sessionID = runtime.session?.sessionID
+        let jobs = backend.jobs
+            .filter { job in
+                guard let sessionID else { return false }
+                return job.sessionID == sessionID
+            }
+            .sorted { lhs, rhs in
+                if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+                return lhs.jobID < rhs.jobID
+            }
+            .map { job in
+                ProjectJobPresentation(
+                    jobID: job.jobID,
+                    gatewayState: job.gatewayState,
+                    stateClass: job.stateClass,
+                    heavy: job.heavy,
+                    updatedAt: Date(timeIntervalSince1970: job.updatedAt),
+                    freshness: job.freshness
+                )
+            }
+
+        let lifecycle = backend.lifecycleOperations
+            .filter { operation in
+                guard let sessionID else { return operation.projectID == runtime.projectID }
+                return operation.sessionID == sessionID
+            }
+            .sorted { lhs, rhs in
+                if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+                return lhs.operationID < rhs.operationID
+            }
+            .prefix(6)
+            .map { operation in
+                ProjectLifecyclePresentation(
+                    operationID: operation.operationID,
+                    action: operation.action,
+                    state: operation.state,
+                    reason: operation.reason,
+                    errorCode: operation.errorCode,
+                    updatedAt: Date(timeIntervalSince1970: operation.updatedAt)
+                )
+            }
+
+        let effects = backend.effects
+            .sorted { lhs, rhs in
+                if lhs.needsAttention != rhs.needsAttention { return lhs.needsAttention }
+                if lhs.updatedAtRaw != rhs.updatedAtRaw { return lhs.updatedAtRaw > rhs.updatedAtRaw }
+                return lhs.effectID < rhs.effectID
+            }
+            .prefix(8)
+            .map { effect in
+                ProjectEffectPresentation(
+                    effectID: effect.effectID,
+                    taskID: effect.taskID,
+                    state: effect.state,
+                    stateKnown: effect.stateKnown,
+                    generation: effect.generation,
+                    errorCode: effect.lastErrorCode,
+                    needsAttention: effect.needsAttention
+                )
+            }
+
+        let base = makeOverview(envelope.snapshot)
+        return ProjectDetailLivePresentation(
+            projectID: runtime.projectID,
+            projectLabel: runtime.projectLabel,
+            freshness: runtime.freshness,
+            transportLive: runtime.transportLive,
+            connectionIncident: base.connectionIncident,
+            cachedNotice: base.cachedNotice,
+            session: runtime.session,
+            currentOperation: runtime.currentOperation,
+            jobs: jobs,
+            lifecycle: Array(lifecycle),
+            effects: Array(effects)
+        )
     }
 
     public static func makeRunRows(_ snapshot: ObserverSnapshot) -> [RunRowPresentation] {

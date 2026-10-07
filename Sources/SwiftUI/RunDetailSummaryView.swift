@@ -31,10 +31,23 @@ public struct RunDetailSummaryView: View {
                 TestProgressRow(presentation.tests)
                 VStack(spacing: 0) {
                     ForEach(presentation.destinations) { destination in
-                        NavigationLink { PlaceholderDestinationView(title: destination.rawValue) } label: { DestinationRow(destination.rawValue) }
-                            .buttonStyle(.plain)
+                        NavigationLink { destinationView(destination) } label: {
+                            DestinationRow(destination.rawValue)
+                        }
+                        .buttonStyle(.plain)
                         Divider()
                     }
+                    NavigationLink {
+                        ObserverEvidenceDestinationView(
+                            mode: .effects,
+                            runID: presentation.runID,
+                            projectName: presentation.projectName
+                        )
+                    } label: {
+                        DestinationRow("Effects", detail: "Project-scoped effect ledger")
+                    }
+                    .buttonStyle(.plain)
+                    Divider()
                 }
                 if let event = presentation.lastEventText {
                     VStack(alignment: .leading, spacing: ObserverSpacing.x1) {
@@ -60,6 +73,26 @@ public struct RunDetailSummaryView: View {
         }
         .navigationTitle("Summary")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func destinationView(_ destination: RunDetailDestination) -> some View {
+        switch destination {
+        case .timeline:
+            ObserverEvidenceDestinationView(
+                mode: .timeline,
+                runID: presentation.runID,
+                projectName: presentation.projectName
+            )
+        case .rawEvents:
+            ObserverEvidenceDestinationView(
+                mode: .rawEvents,
+                runID: presentation.runID,
+                projectName: presentation.projectName
+            )
+        case .tests, .checkpointsAndArtifacts, .logs:
+            PlaceholderDestinationView(title: destination.rawValue)
+        }
     }
 
     private var truthMatrix: some View {

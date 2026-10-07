@@ -31,16 +31,22 @@ public struct ObserverTransportMetadata: Sendable, Equatable {
 public struct ObserverDataEnvelope: Sendable, Equatable {
     public let snapshot: ObserverSnapshot
     public let preferredDetailRunID: String?
+    public let systemHealth: SystemHealthSnapshot?
     public let transportMetadata: ObserverTransportMetadata?
+    public let backendTruth: ObserverB8BackendTruth?
 
     public init(
         snapshot: ObserverSnapshot,
         preferredDetailRunID: String? = nil,
-        transportMetadata: ObserverTransportMetadata? = nil
+        systemHealth: SystemHealthSnapshot? = nil,
+        transportMetadata: ObserverTransportMetadata? = nil,
+        backendTruth: ObserverB8BackendTruth? = nil
     ) {
         self.snapshot = snapshot
         self.preferredDetailRunID = preferredDetailRunID
+        self.systemHealth = systemHealth
         self.transportMetadata = transportMetadata
+        self.backendTruth = backendTruth
     }
 }
 

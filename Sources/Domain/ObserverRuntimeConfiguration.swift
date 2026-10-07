@@ -72,7 +72,8 @@ public struct ObserverRuntimeConfigurationStore {
 
     public static func validatedBearerToken(_ token: String) throws -> String {
         let value = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty,
+        guard value.hasPrefix(ObserverB8Contract.readTokenPrefix),
+              !value.isEmpty,
               value.count <= 256,
               value.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else {
             throw ObserverRuntimeConfigurationError.invalidBearerToken
