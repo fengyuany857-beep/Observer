@@ -44,6 +44,7 @@ jobs:
         run: bash Scripts/capture_topology_prototypes.sh '${{ steps.sim.outputs.udid }}'
 
       - name: Upload topology prototypes
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: Observer-Topology-Prototypes
