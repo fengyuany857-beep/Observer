@@ -34,6 +34,9 @@ jobs:
         shell: bash
         run: echo "udid=$(python3 Scripts/find_simulator.py)" >> "$GITHUB_OUTPUT"
 
+      - name: Start simulator boot early
+        run: xcrun simctl boot '${{ steps.sim.outputs.udid }}' 2>/dev/null || true
+
       - name: Build simulator app
         run: Scripts/build_simulator.sh '${{ steps.sim.outputs.udid }}'
 
