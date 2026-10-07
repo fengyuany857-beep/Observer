@@ -1,0 +1,48 @@
+name: Observer Topology Prototype Render
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - observer-ui-v2-topology-render-20261007
+    paths:
+      - 'App/ObserverApp.swift'
+      - 'Sources/SwiftUI/Visual/**'
+      - 'Scripts/capture_topology_prototypes.sh'
+      - '.github/workflows/observer-topology-render.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: macos-26
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Select Xcode 26.5
+        run: Scripts/select_xcode.sh
+
+      - name: Install XcodeGen and generate project
+        run: Scripts/bootstrap_xcodegen.sh
+
+      - name: Select simulator
+        id: sim
+        shell: bash
+        run: echo "udid=$(python3 Scripts/find_simulator.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Build simulator app
+        run: Scripts/build_simulator.sh '${{ steps.sim.outputs.udid }}'
+
+      - name: Capture topology A B C
+        run: bash Scripts/capture_topology_prototypes.sh '${{ steps.sim.outputs.udid }}'
+
+      - name: Upload topology prototypes
+        uses: actions/upload-artifact@v7
+        with:
+          name: Observer-Topology-Prototypes
+          path: Artifacts/Observer-Topology-Prototypes.zip
+          if-no-files-found: error
