@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout candidate branch
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Select Xcode 26.5
         run: Scripts/select_xcode.sh
@@ -44,4 +46,5 @@ jobs:
           test -f Sources/SwiftUI/Visual/ObserverTopologyField.swift
           test -f Sources/SwiftUI/Visual/ObserverScreenSurface.swift
           test -f Sources/SwiftUI/Visual/ObserverTopologyPrototypeView.swift
-          git diff --exit-code observer-b1-approval-broker-20261006...HEAD --             Sources/SwiftUI/OverviewView.swift             Sources/SwiftUI/ObserverLiveShell.swift             Sources/SwiftUI/ObserverDesignTokens.swift             project.yml             .github/workflows/observer-ci.yml
+
+          git diff --exit-code             observer-b1-approval-broker-20261006...HEAD             --             Sources/SwiftUI/OverviewView.swift             Sources/SwiftUI/ObserverLiveShell.swift             Sources/SwiftUI/ObserverDesignTokens.swift             project.yml             .github/workflows/observer-ci.yml
