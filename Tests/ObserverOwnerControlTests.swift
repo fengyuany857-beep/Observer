@@ -83,7 +83,7 @@ private func approvalJSON(state: String = "PENDING", version: Int = 1) -> String
       "action_class": "START_CODING_SESSION",
       "effect_class": "WORKSPACE_MUTATION",
       "state": "\(state)",
-      "state_version": (version),
+      "state_version": \(version),
       "created_at": 1000,
       "expires_at": 1120,
       "reason": null,
@@ -268,7 +268,7 @@ struct ObserverOwnerControlTests {
               "contract_version": "observer.owner-control.v1",
               "project_id": "vcw-acceptance",
               "grant_id": "not-exposed-by-model",
-              "approvals": [(approvalJSON())]
+              "approvals": [\(approvalJSON())]
             }
             """
             let stub = HTTPStub([.response(response(body: listJSON))])
