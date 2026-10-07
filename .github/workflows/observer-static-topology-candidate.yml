@@ -47,4 +47,4 @@ jobs:
           test -f Sources/SwiftUI/Visual/ObserverScreenSurface.swift
           test -f Sources/SwiftUI/Visual/ObserverTopologyPrototypeView.swift
 
-          git diff --exit-code             observer-b1-approval-broker-20261006...HEAD             --             Sources/SwiftUI/OverviewView.swift             Sources/SwiftUI/ObserverLiveShell.swift             Sources/SwiftUI/ObserverDesignTokens.swift             project.yml             .github/workflows/observer-ci.yml
+          git diff --exit-code             3f923557512777cda2ce9797ac98ba8ae241834d...HEAD             --             Sources/SwiftUI/OverviewView.swift             Sources/SwiftUI/ObserverLiveShell.swift             Sources/SwiftUI/ObserverDesignTokens.swift             project.yml             .github/workflows/observer-ci.yml
