@@ -1,0 +1,47 @@
+name: Observer Static Topology Candidate Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - observer-ui-v2-static-topology-20261007
+    paths:
+      - 'Sources/SwiftUI/Visual/**'
+      - 'Docs/Observer-UIV2-Visual-Graft-Third-Party-Notices.md'
+      - '.github/workflows/observer-static-topology-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-static-topology-candidate:
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v7
+
+      - name: Select Xcode 26.5
+        run: Scripts/select_xcode.sh
+
+      - name: Install XcodeGen and generate project
+        run: Scripts/bootstrap_xcodegen.sh
+
+      - name: Select simulator
+        id: sim
+        shell: bash
+        run: echo "udid=$(python3 Scripts/find_simulator.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Build simulator app
+        run: Scripts/build_simulator.sh '${{ steps.sim.outputs.udid }}'
+
+      - name: Verify candidate isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f Sources/SwiftUI/Visual/ObserverTopologyField.metal
+          test -f Sources/SwiftUI/Visual/ObserverTopologyField.swift
+          test -f Sources/SwiftUI/Visual/ObserverScreenSurface.swift
+          test -f Sources/SwiftUI/Visual/ObserverTopologyPrototypeView.swift
+          git diff --exit-code observer-b1-approval-broker-20261006...HEAD --             Sources/SwiftUI/OverviewView.swift             Sources/SwiftUI/ObserverLiveShell.swift             Sources/SwiftUI/ObserverDesignTokens.swift             project.yml             .github/workflows/observer-ci.yml
