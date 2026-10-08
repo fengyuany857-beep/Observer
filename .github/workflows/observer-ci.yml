@@ -3,7 +3,7 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main, observer-b4-close-ci-20261008 ]
+    branches: [ main, observer-b4-close-ci-20261008, observer-r4-bg-p0-isolated-20261008 ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
@@ -37,6 +37,9 @@ jobs:
 
       - name: Run Foundation-only core tests
         run: Scripts/run_core_tests.sh
+
+      - name: Run R4-BG isolated Swift 6 tests
+        run: bash Scripts/run_r4_bg_tests.sh
 
       - name: Select simulator
         id: sim
