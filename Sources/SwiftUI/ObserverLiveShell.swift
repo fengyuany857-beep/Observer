@@ -33,6 +33,7 @@ public final class ObserverLiveViewModel: ObservableObject {
     private let configurationStore: ObserverRuntimeConfigurationStore
     private let ownerCredentialStore: ObserverOwnerCredentialStore
     private let closeCredentialStore: ObserverOwnerCredentialStore
+    private let closeAttemptStore: ObserverSessionCloseAttemptStore
     private let ownerDecisionCoordinator = ObserverApprovalDecisionCoordinator()
     private let sessionCloseCoordinator = ObserverSessionCloseCoordinator()
     private var dataSource: ObserverB8LiveDataSource?
@@ -49,11 +50,13 @@ public final class ObserverLiveViewModel: ObservableObject {
     public init(
         configurationStore: ObserverRuntimeConfigurationStore = ObserverRuntimeConfigurationStore(),
         ownerCredentialStore: ObserverOwnerCredentialStore = ObserverOwnerCredentialStore(),
-        closeCredentialStore: ObserverOwnerCredentialStore = ObserverOwnerCredentialStore(purpose: .sessionClose)
+        closeCredentialStore: ObserverOwnerCredentialStore = ObserverOwnerCredentialStore(purpose: .sessionClose),
+        closeAttemptStore: ObserverSessionCloseAttemptStore = ObserverSessionCloseAttemptStore()
     ) {
         self.configurationStore = configurationStore
         self.ownerCredentialStore = ownerCredentialStore
         self.closeCredentialStore = closeCredentialStore
+        self.closeAttemptStore = closeAttemptStore
         let settings = configurationStore.loadSettings()
         self.baseURLString = settings.baseURL.absoluteString
         self.projectID = settings.projectID
@@ -87,6 +90,23 @@ public final class ObserverLiveViewModel: ObservableObject {
 
     public var isSessionCloseConfigured: Bool {
         closeClient != nil && closeCredentialStored
+    }
+
+    /// Persisted attempts survive app relaunch and block a second Close identity.
+    /// Failed reads must fail closed, never default to an unguarded idle state.
+    public func closeState(for sessionID: String) -> ObserverSessionCloseState {
+        if let current = sessionCloseStates[sessionID] { return current }
+        guard let scopeURL = URL(string: baseURLString) else {
+            return .failed("CLOSE_ATTEMPT_SCOPE_INVALID")
+        }
+        do {
+            guard let attemptID = try closeAttemptStore.load(
+                baseURL: scopeURL, projectID: projectID, sessionID: sessionID
+            ) else { return .idle }
+            return .outcomeUnknown(attemptID: attemptID, lifecycle: nil)
+        } catch {
+            return .failed("CLOSE_ATTEMPT_STORAGE_UNAVAILABLE")
+        }
     }
 
     public var connectionLabel: String {
@@ -347,57 +367,81 @@ public final class ObserverLiveViewModel: ObservableObject {
     }
 
     public func closeSession(_ sessionID: String) async {
-        guard let closeClient else { return }
-        if sessionCloseStates[sessionID]?.blocksNewClose == true { return }
+        guard let closeClient, let scopeURL = URL(string: baseURLString) else { return }
+        guard case .idle = closeState(for: sessionID) else { return }
+        let scopeProject = projectID
         let attemptID = "close:\(UUID().uuidString.lowercased())"
+        do {
+            // No Close request is dispatched until its idempotency key is durable.
+            try closeAttemptStore.record(
+                attemptID, baseURL: scopeURL, projectID: scopeProject, sessionID: sessionID
+            )
+        } catch {
+            sessionCloseStates[sessionID] = .failed("CLOSE_ATTEMPT_STORAGE_UNAVAILABLE")
+            return
+        }
         sessionCloseStates[sessionID] = .submitting(attemptID: attemptID)
         let result = await sessionCloseCoordinator.close(
             sessionID: sessionID,
             closeAttemptID: attemptID,
             client: closeClient
         )
-        applySessionCloseResult(result, sessionID: sessionID)
-        if case .observed(let lifecycle) = result, lifecycle.isTerminal {
+        applySessionCloseResult(result, sessionID: sessionID, scopeURL: scopeURL, scopeProject: scopeProject)
+        if case .observed(let lifecycle) = result, lifecycle.isTerminal,
+           scopeURL.absoluteString == baseURLString, scopeProject == projectID {
             _ = await refresh()
         }
     }
 
     public func checkSessionCloseStatus(_ sessionID: String) async {
         guard let closeClient,
-              let attemptID = sessionCloseStates[sessionID]?.attemptID else {
+              let scopeURL = URL(string: baseURLString),
+              let attemptID = sessionCloseStates[sessionID]?.attemptID
+                  ?? closeState(for: sessionID).attemptID else {
             return
         }
+        let scopeProject = projectID
         let result = await sessionCloseCoordinator.status(
             sessionID: sessionID,
             closeAttemptID: attemptID,
             client: closeClient
         )
-        applySessionCloseResult(result, sessionID: sessionID)
-        if case .observed(let lifecycle) = result, lifecycle.isTerminal {
+        applySessionCloseResult(result, sessionID: sessionID, scopeURL: scopeURL, scopeProject: scopeProject)
+        if case .observed(let lifecycle) = result, lifecycle.isTerminal,
+           scopeURL.absoluteString == baseURLString, scopeProject == projectID {
             _ = await refresh()
         }
     }
 
     public func reconcileSessionClose(_ sessionID: String) async {
         guard let closeClient,
-              let attemptID = sessionCloseStates[sessionID]?.attemptID else {
+              let scopeURL = URL(string: baseURLString),
+              let attemptID = sessionCloseStates[sessionID]?.attemptID
+                  ?? closeState(for: sessionID).attemptID else {
             return
         }
+        let scopeProject = projectID
         let result = await sessionCloseCoordinator.reconcileSameAttempt(
             sessionID: sessionID,
             closeAttemptID: attemptID,
             client: closeClient
         )
-        applySessionCloseResult(result, sessionID: sessionID)
-        if case .observed(let lifecycle) = result, lifecycle.isTerminal {
+        applySessionCloseResult(result, sessionID: sessionID, scopeURL: scopeURL, scopeProject: scopeProject)
+        if case .observed(let lifecycle) = result, lifecycle.isTerminal,
+           scopeURL.absoluteString == baseURLString, scopeProject == projectID {
             _ = await refresh()
         }
     }
 
     private func applySessionCloseResult(
         _ result: ObserverSessionCloseResult,
-        sessionID: String
+        sessionID: String,
+        scopeURL: URL,
+        scopeProject: String
     ) {
+        // A late response must not mutate a different project's UI state.
+        guard scopeURL.absoluteString == baseURLString,
+              scopeProject == projectID else { return }
         switch result {
         case .observed(let lifecycle):
             if lifecycle.state == "OUTCOME_UNKNOWN" {
@@ -417,8 +461,19 @@ public final class ObserverLiveViewModel: ObservableObject {
             )
             ownerErrorCode = "VCW_SESSION_CLOSE_OUTCOME_UNKNOWN"
         case .failed(let code):
-            sessionCloseStates[sessionID] = .failed(code)
-            ownerErrorCode = code
+            // An error never proves that the Close POST had no effect.
+            // Keep the original journal identity for status and replay.
+            if let attemptID = try? closeAttemptStore.load(
+                baseURL: scopeURL, projectID: scopeProject, sessionID: sessionID
+            ) {
+                sessionCloseStates[sessionID] = .outcomeUnknown(
+                    attemptID: attemptID, lifecycle: nil
+                )
+                ownerErrorCode = "VCW_SESSION_CLOSE_OUTCOME_UNKNOWN"
+            } else {
+                sessionCloseStates[sessionID] = .failed(code)
+                ownerErrorCode = code
+            }
         case .busy(let attemptID):
             sessionCloseStates[sessionID] = .submitting(attemptID: attemptID)
         }
@@ -811,7 +866,7 @@ private struct ObserverLiveShell: View {
                         ownerConfigured: model.isSessionCloseConfigured,
                         sessionCloseAvailable: true,
                         closeState: project.session.map {
-                            model.sessionCloseStates[$0.sessionID] ?? .idle
+                            model.closeState(for: $0.sessionID)
                         } ?? .idle,
                         closeSession: { sessionID in
                             Task { await model.closeSession(sessionID) }

@@ -101,3 +101,76 @@ public struct ObserverOwnerCredentialStore {
         )
     }
 }
+
+/// Durable Close idempotency identity, deliberately isolated from all bearer accounts.
+/// Records are not cleared on success: an old Session must never be closed twice.
+public struct ObserverSessionCloseAttemptStore {
+    public static let accountPrefix = "observer-close-attempt-v1:"
+    private let keychainService: String
+
+    public init(keychainService: String = "com.fnauy.observer.transport") {
+        self.keychainService = keychainService
+    }
+
+    public static func account(baseURL: URL, projectID: String, sessionID: String) -> String {
+        let scope = [baseURL.absoluteString, projectID, sessionID]
+            .map { "\($0.utf8.count):\($0)" }.joined()
+        return accountPrefix + Data(scope.utf8).base64EncodedString()
+    }
+
+    public static func isValidAttemptID(_ value: String) -> Bool {
+        value.range(
+            of: #"^close:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"#,
+            options: .regularExpression
+        ) != nil
+    }
+
+    private func identity(baseURL: URL, projectID: String, sessionID: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: Self.account(
+                baseURL: baseURL, projectID: projectID, sessionID: sessionID
+            )
+        ]
+    }
+
+    public func load(baseURL: URL, projectID: String, sessionID: String) throws -> String? {
+        var query = identity(baseURL: baseURL, projectID: projectID, sessionID: sessionID)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess else {
+            throw ObserverRuntimeConfigurationError.keychainFailure(status)
+        }
+        guard let data = item as? Data,
+              let attemptID = String(data: data, encoding: .utf8),
+              Self.isValidAttemptID(attemptID) else {
+            throw ObserverOwnerControlError.invalidConfiguration("CLOSE_ATTEMPT_CORRUPT")
+        }
+        return attemptID
+    }
+
+    public func record(
+        _ attemptID: String, baseURL: URL, projectID: String, sessionID: String
+    ) throws {
+        guard Self.isValidAttemptID(attemptID) else {
+            throw ObserverOwnerControlError.invalidConfiguration("CLOSE_ATTEMPT_ID_INVALID")
+        }
+        var add = identity(baseURL: baseURL, projectID: projectID, sessionID: sessionID)
+        add[kSecValueData as String] = Data(attemptID.utf8)
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let status = SecItemAdd(add as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            guard try load(baseURL: baseURL, projectID: projectID, sessionID: sessionID) == attemptID else {
+                throw ObserverOwnerControlError.invalidConfiguration("CLOSE_ATTEMPT_ALREADY_EXISTS")
+            }
+            return
+        }
+        guard status == errSecSuccess else {
+            throw ObserverRuntimeConfigurationError.keychainFailure(status)
+        }
+    }
+}

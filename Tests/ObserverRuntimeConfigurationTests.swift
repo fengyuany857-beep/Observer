@@ -97,6 +97,72 @@ struct ObserverRuntimeConfigurationTests {
         expect(closeStore.purpose != approvalsStore.purpose,
                "Close and Approval cannot address same Keychain account")
 
+        let exampleAttempt = "close:12345678-1234-4abc-9abc-123456789abc"
+        expect(ObserverSessionCloseAttemptStore.isValidAttemptID(exampleAttempt),
+               "Close journal accepts a well-formed request identity")
+        expect(!ObserverSessionCloseAttemptStore.isValidAttemptID("close:bad"),
+               "Close journal rejects malformed request identity")
+        expect(!ObserverSessionCloseAttemptStore.isValidAttemptID("obsw_secret"),
+               "Close journal cannot store owner credentials")
+        let closeURL = URL(string: "https://example.test")!
+        let account = ObserverSessionCloseAttemptStore.account(
+            baseURL: closeURL, projectID: "vcw-acceptance", sessionID: "s_one"
+        )
+        expect(account.hasPrefix(ObserverSessionCloseAttemptStore.accountPrefix),
+               "Close journal Keychain account has a separate namespace")
+        expect(account == ObserverSessionCloseAttemptStore.account(
+            baseURL: closeURL, projectID: "vcw-acceptance", sessionID: "s_one"
+        ), "Close journal account is stable across app launches")
+        expect(account != ObserverSessionCloseAttemptStore.account(
+            baseURL: closeURL, projectID: "vcw-acceptance", sessionID: "s_two"
+        ), "different session cannot reuse another Close identity")
+        expect(account != ObserverSessionCloseAttemptStore.account(
+            baseURL: closeURL, projectID: "different-project", sessionID: "s_one"
+        ), "different project cannot reuse another Close identity")
+        expect(account != ObserverSessionCloseAttemptStore.account(
+            baseURL: URL(string: "https://other.example.test")!,
+            projectID: "vcw-acceptance", sessionID: "s_one"
+        ), "different host cannot reuse another Close identity")
+        expect(account != approvalsStore.purpose.rawValue
+               && account != closeStore.purpose.rawValue,
+               "Close journal does not overwrite either owner credential")
+
+        // Integration with the real Security Keychain; use a disposable isolated service.
+        let disposableService = "com.fnauy.observer.ci.close-attempt." + UUID().uuidString
+        let journal = ObserverSessionCloseAttemptStore(keychainService: disposableService)
+        let reloaded = ObserverSessionCloseAttemptStore(keychainService: disposableService)
+        do {
+            try journal.record(
+                exampleAttempt, baseURL: closeURL,
+                projectID: "vcw-acceptance", sessionID: "s_one"
+            )
+            let stored = try reloaded.load(
+                baseURL: closeURL, projectID: "vcw-acceptance", sessionID: "s_one"
+            )
+            expect(stored == exampleAttempt, "Close attempt survives a new store instance")
+            try journal.record(
+                exampleAttempt, baseURL: closeURL,
+                projectID: "vcw-acceptance", sessionID: "s_one"
+            )
+            expect(true, "same Close attempt is idempotently recordable")
+        } catch {
+            expect(false, "Keychain journal write/reload succeeds")
+        }
+        rejects("second different Close attempt cannot replace persisted identity") {
+            try journal.record(
+                "close:abcdef12-1234-4abc-9abc-123456789abc",
+                baseURL: closeURL, projectID: "vcw-acceptance", sessionID: "s_one"
+            )
+        }
+        do {
+            let other = try reloaded.load(
+                baseURL: closeURL, projectID: "other-project", sessionID: "s_one"
+            )
+            expect(other == nil, "journal never crosses project authority scope")
+        } catch {
+            expect(false, "journal scope isolation reads without failure")
+        }
+
         rejects("read token rejected by owner store") {
             _ = try ObserverOwnerCredentialStore.validatedBearerToken("obsr_read_token")
         }

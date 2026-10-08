@@ -80,6 +80,7 @@ jobs:
             Artifacts/Observer-B0-Contract-Test-Report.txt
             Artifacts/Observer-B1-Approval-Test-Report.txt
             Artifacts/Observer-B4-Dual-Owner-Static-Report.txt
+            Artifacts/Observer-B4-Close-Attempt-Static-Report.txt
             Artifacts/Observer-Owner-Approval-Slice-Static-Report.txt
             Artifacts/Observer-Build-Manifest.txt
             Artifacts/Observer-Simulator-Build.log

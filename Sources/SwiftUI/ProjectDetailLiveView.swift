@@ -371,6 +371,22 @@ public struct ProjectDetailLiveView: View {
 
                 case .tracking(let lifecycle):
                     lifecycleBlock(lifecycle)
+                    if !lifecycle.cleanupComplete {
+                        Button("CHECK STATUS") { checkStatus(sessionID) }
+                            .buttonStyle(.bordered)
+                        Button("RECONCILE SAME ATTEMPT") { confirmingReconcile = true }
+                            .buttonStyle(.bordered)
+                            .confirmationDialog(
+                                "Reconcile the existing Close request?",
+                                isPresented: $confirmingReconcile,
+                                titleVisibility: .visible
+                            ) {
+                                Button("RECONCILE SAME ATTEMPT") { reconcile(sessionID) }
+                                Button("CANCEL", role: .cancel) {}
+                            } message: {
+                                Text("Reuses the existing close_attempt_id. No new Close request identity is created.")
+                            }
+                    }
 
                 case .outcomeUnknown(let attemptID, let lifecycle):
                     ObserverFunctionalSignal("OUTCOME UNKNOWN", tone: .warning)

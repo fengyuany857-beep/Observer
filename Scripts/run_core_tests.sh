@@ -11,6 +11,7 @@ python3 Scripts/validate_uiv2_approvals_owner_control.py | tee Artifacts/Observe
 python3 Scripts/validate_owner_approval_slice.py | tee Artifacts/Observer-Owner-Approval-Slice-Static-Report.txt
 python3 Scripts/validate_uiv2_session_close.py | tee Artifacts/Observer-UIV2-Session-Close-Static-Report.txt
 python3 Scripts/validate_b4_dual_owner_credentials.py | tee Artifacts/Observer-B4-Dual-Owner-Static-Report.txt
+python3 Scripts/validate_b4_close_attempt_persistence.py | tee Artifacts/Observer-B4-Close-Attempt-Static-Report.txt
 python3 Scripts/validate_uiv2_deadline_ux.py | tee Artifacts/Observer-UIV2-Deadline-UX-Static-Report.txt
 python3 Scripts/validate_uiv2_static_topology.py | tee Artifacts/Observer-UIV2-Static-Topology-Report.txt
 python3 Scripts/validate_uiv2_ambient_topology_motion.py | tee Artifacts/Observer-UIV2-Ambient-Topology-Motion-Report.txt
