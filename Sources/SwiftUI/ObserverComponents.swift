@@ -294,6 +294,7 @@ public struct CurrentOperationBlock: View {
                 Text(operation.kind.uppercased()).font(.caption2).foregroundStyle(.secondary)
             }
         }
+        .observerSemanticTransition(.structural)
     }
 }
 
@@ -365,6 +366,109 @@ public struct CheckpointRow: View {
             Spacer()
             Text(checkpoint.status).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
         }
+    }
+}
+
+public struct ObserverSessionDeadlineView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let presentation: ObserverDeadlineUXPresentation
+
+    public init(_ presentation: ObserverDeadlineUXPresentation) {
+        self.presentation = presentation
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: ObserverSpacing.x3) {
+            HStack(alignment: .firstTextBaseline, spacing: ObserverSpacing.x3) {
+                ObserverMetadataKey(
+                    presentation.transportLive
+                        ? "SESSION WINDOW"
+                        : "LAST OBSERVED SESSION WINDOW"
+                )
+                Spacer(minLength: ObserverSpacing.x3)
+                Image(systemName: symbolName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ObserverPalette.color(for: presentation.tone))
+                    .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+                Text(presentation.headline)
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.45)
+                    .foregroundStyle(ObserverPalette.color(for: presentation.tone))
+            }
+
+            HStack(alignment: .lastTextBaseline, spacing: ObserverSpacing.x3) {
+                Text(ObserverDeadlineUXPresentation.duration(presentation.remainingSeconds))
+                    .font(.system(.title2, design: .rounded).weight(.semibold))
+                    .monospacedDigit()
+                    .contentTransition(
+                        reduceMotion
+                            ? .opacity
+                            : .numericText(value: Double(presentation.remainingSeconds))
+                    )
+                Text(presentation.transportLive ? "REMAINING" : "LAST OBSERVED")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: ObserverSpacing.x2)
+            }
+
+            if let detail = presentation.detail {
+                ObserverFunctionalSignal(detail, tone: presentation.tone)
+            }
+
+            DenseMetadataNode([
+                .init(
+                    id: "elapsed",
+                    key: "ELAPSED",
+                    value: ObserverDeadlineUXPresentation.duration(presentation.elapsedSeconds)
+                ),
+                .init(
+                    id: "hard-ttl",
+                    key: "HARD TTL",
+                    value: ObserverDeadlineUXPresentation.duration(presentation.hardTTLSeconds)
+                ),
+                .init(
+                    id: "warning",
+                    key: "FINAL WINDOW",
+                    value: ObserverDeadlineUXPresentation.duration(presentation.closeReminderSeconds)
+                )
+            ])
+
+            Rectangle()
+                .fill(ObserverPalette.color(for: presentation.tone))
+                .frame(height: presentation.isFinalWarningWindow ? 2 : 1)
+                .opacity(presentation.phase == .active ? 0.35 : 0.75)
+        }
+        .observerSemanticChange(
+            value: presentation.serverPhase,
+            emphasis: presentation.isFinalWarningWindow ? .attention : .subtle
+        )
+        .animation(
+            reduceMotion ? nil : .easeOut(duration: 0.18),
+            value: presentation.remainingSeconds
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var symbolName: String {
+        switch presentation.phase {
+        case .active: return "timer"
+        case .closeRequired: return "hourglass.bottomhalf.filled"
+        case .hardExpired: return "clock.badge.exclamationmark"
+        case .terminal: return "checkmark.circle"
+        case .unknown: return "questionmark.circle"
+        }
+    }
+
+    private var accessibilityLabel: String {
+        [
+            presentation.headline,
+            "remaining \(ObserverDeadlineUXPresentation.duration(presentation.remainingSeconds))",
+            presentation.detail
+        ]
+        .compactMap { $0 }
+        .joined(separator: ", ")
     }
 }
 

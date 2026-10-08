@@ -7,4 +7,5 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath build/DerivedData \
+  -skipPackagePluginValidation \
   build | tee Artifacts/Observer-Simulator-Build.log

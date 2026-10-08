@@ -75,6 +75,32 @@ struct ObserverRuntimeConfigurationTests {
             _ = try ObserverRuntimeConfigurationStore.validatedBearerToken("obsr_bad token")
         }
 
+        rejects("owner token rejected by read client") {
+            _ = try ObserverRuntimeConfigurationStore.validatedBearerToken("obsw_owner_token")
+        }
+
+        do {
+            let token = try ObserverOwnerCredentialStore.validatedBearerToken("obsw_owner_token")
+            expect(token == "obsw_owner_token", "owner token accepted by owner store")
+        } catch {
+            expect(false, "valid owner token accepted")
+        }
+
+        let approvalsStore = ObserverOwnerCredentialStore()
+        let closeStore = ObserverOwnerCredentialStore(purpose: .sessionClose)
+        expect(approvalsStore.purpose == .approvals, "existing owner defaults to approval Keychain identity")
+        expect(closeStore.purpose == .sessionClose, "close uses separate Keychain identity")
+        expect(approvalsStore.purpose.rawValue == "observer-owner-bearer",
+               "legacy approval Keychain account preserved")
+        expect(closeStore.purpose.rawValue == "observer-owner-close-bearer",
+               "Close Keychain account separate from approval")
+        expect(closeStore.purpose != approvalsStore.purpose,
+               "Close and Approval cannot address same Keychain account")
+
+        rejects("read token rejected by owner store") {
+            _ = try ObserverOwnerCredentialStore.validatedBearerToken("obsr_read_token")
+        }
+
         rejects("oversized token rejected") {
             _ = try ObserverRuntimeConfigurationStore.validatedBearerToken(
                 String(repeating: "x", count: 257)

@@ -8,6 +8,7 @@ xcodebuild \
   -sdk iphoneos \
   -destination 'generic/platform=iOS' \
   -derivedDataPath build/DerivedDataDevice \
+  -skipPackagePluginValidation \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY="" \

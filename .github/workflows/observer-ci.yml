@@ -3,13 +3,15 @@ name: Observer CI + Self-Sign
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, observer-b4-close-ci-20261008 ]
     paths:
       - 'App/**'
       - 'WidgetExtension/**'
       - 'Sources/**'
       - 'Tests/**'
       - 'Scripts/**'
+      - 'Packages/**'
+      - 'Reference/**'
       - 'project.yml'
       - '.github/workflows/observer-ci.yml'
 
@@ -29,6 +31,9 @@ jobs:
 
       - name: Install XcodeGen and generate project
         run: Scripts/bootstrap_xcodegen.sh
+
+      - name: Run ObserverReadAPI package tests
+        run: swift test --package-path Packages/ObserverReadAPI
 
       - name: Run Foundation-only core tests
         run: Scripts/run_core_tests.sh
@@ -72,6 +77,10 @@ jobs:
             Artifacts/Observer-Signing-Report.json
             Artifacts/Observer-Signing-Report.txt
             Artifacts/Observer-Core-Test-Report.txt
+            Artifacts/Observer-B0-Contract-Test-Report.txt
+            Artifacts/Observer-B1-Approval-Test-Report.txt
+            Artifacts/Observer-B4-Dual-Owner-Static-Report.txt
+            Artifacts/Observer-Owner-Approval-Slice-Static-Report.txt
             Artifacts/Observer-Build-Manifest.txt
             Artifacts/Observer-Simulator-Build.log
             Artifacts/Observer-Device-Unsigned-Build.log
